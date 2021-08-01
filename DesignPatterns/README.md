@@ -34,8 +34,7 @@ Creational patterns are ones that create objects, rather than having to instanti
 - **Prototype** creates objects by cloning an existing object.
 - **Singleton** restricts object creation for a class to only one instance.
 
-
-------------
+ 
 
 
 
@@ -50,8 +49,7 @@ These concern class and object composition. They use inheritance to compose inte
 - **Flyweight** reduces the cost of creating and manipulating a large number of similar objects.
 - **Proxy** provides a placeholder for another object to control access, reduce cost, and reduce complexity.
 
-
-------------
+ 
 
 
 ### Behavioral
