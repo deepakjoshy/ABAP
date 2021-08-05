@@ -1,7 +1,6 @@
     TRY.
-        cl_salv_table=>factory(
-          IMPORTING r_salv_table = DATA(lo_table)
-          CHANGING  t_table      = it_input_table ).
+        cl_salv_table=>factory( IMPORTING r_salv_table = DATA(lo_table)
+                                CHANGING  t_table      = it_input_table ).
   
         DATA(lt_fcat) = cl_salv_controller_metadata=>get_lvc_fieldcatalog(  r_columns      = lo_table->get_columns( )
                                                                             r_aggregations = lo_table->get_aggregations( ) ).
