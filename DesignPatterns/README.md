@@ -14,7 +14,7 @@ Design Patterns are reusable solutions to commonly occuring problems(in the cont
 - Only talk to your friends
 - Don't call us,we'll call you
 - A class should have only one reason to change
-
+ 
  
 
 
