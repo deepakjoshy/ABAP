@@ -3,16 +3,13 @@
           IMPORTING r_salv_table = DATA(lo_table)
           CHANGING  t_table      = it_input_table ).
   
-        DATA(lt_fcat) = cl_salv_controller_metadata=>get_lvc_fieldcatalog(
-                        r_columns      = lo_table->get_columns( )
-                        r_aggregations = lo_table->get_aggregations( ) ).
+        DATA(lt_fcat) = cl_salv_controller_metadata=>get_lvc_fieldcatalog(  r_columns      = lo_table->get_columns( )
+                                                                            r_aggregations = lo_table->get_aggregations( ) ).
 
-        DATA(lo_result) = cl_salv_ex_util=>factory_result_data_table( 
-                          r_data         = ir_data_ref
-                          t_fieldcatalog = lt_fcat ).
+        DATA(lo_result) = cl_salv_ex_util=>factory_result_data_table( r_data         = ir_data_ref
+                                                                      t_fieldcatalog = lt_fcat ).
 
-        cl_salv_bs_tt_util=>if_salv_bs_tt_util~transform(
-                                                          EXPORTING
+        cl_salv_bs_tt_util=>if_salv_bs_tt_util~transform(  EXPORTING
                                                             xml_type      = if_salv_bs_xml=>c_type_xlsx
                                                             xml_version   = cl_salv_bs_a_xml_base=>get_version( )
                                                             r_result_data = lo_result
