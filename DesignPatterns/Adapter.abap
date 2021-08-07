@@ -131,8 +131,7 @@ START-OF-SELECTION.
   WRITE: / 'Recharging iPhone with Micro USB'.
   DATA(lo_iphone_new) = NEW cl_iphone( ).
   DATA lo_lightning_adapter TYPE REF TO if_microusbphone.
-  DATA lo_if_microusb_new TYPE REF TO if_microusbphone.
   CREATE OBJECT lo_lightning_adapter TYPE cl_lightningtomicrousbadapter EXPORTING iv_lightningphone = lo_iphone_new.
-  lo_if_microusb_new = lo_lightning_adapter.
-  lo_if_microusb_new->usemicrousb( ).
-  lo_if_microusb_new->recharge( ).
+  lo_if_microusb = lo_lightning_adapter.
+  lo_if_microusb->usemicrousb( ).
+  lo_if_microusb->recharge( ).
