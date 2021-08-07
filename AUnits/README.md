@@ -18,6 +18,8 @@ ABAP Unit is suitable for test-driven development (TDD).
 
 ### Mocking Tables 
 
+Sample Code
+
 
      DATA:   lo_environment TYPE REF TO if_osql_test_environment.
              lo_environment = cl_osql_test_environment=>create( i_dependency_list = VALUE #( ( 'cepc' )  ( 'cepc_bukrs' ) ) ).
@@ -34,3 +36,42 @@ ABAP Unit is suitable for test-driven development (TDD).
     lt_cepc_bukrs = VALUE #( ( mandt = sy-mandt kokrs = 'CONA' prctr = '10000001' bukrs = '1111' ) 
                              ( mandt = sy-mandt kokrs = 'ABCD' prctr = '10000002' bukrs = '111' ) ).  
     lo_environment->insert_test_data( lt_cepc_bukrs ).
+
+
+
+
+### BOPF AUnit
+
+Sample Code:
+
+    DATA(lo_root) = /bobf/cl_bunit=>create_root( sc_bo_key ).  
+    lo_root->attribute( sc_node_attribute-i_centralpurchasecontracttp-centralpurchasecontract )->set( gc_ebeln ).  
+    DATA(lo_itm) = lo_root->create_child( sc_node-i_cntrlpurchasecontractitemtp ).  
+    lo_itm->attribute( sc_node_attribute-i_cntrlpurchasecontractitemtp-centralpurchasecontract )->set( gc_ebeln ).  
+    DATA(lo_itmcndnvaldty) = lo_itm->create_child( sc_node-i_cntrlpurcontritmcndnvaldtytp ).  
+    lo_itmcndnvaldty->attribute( sc_node_attribute-i_cntrlpurcontritmcndnvaldtytp-centralpurchasecontract )->set( gc_ebeln ).  
+    lo_itmcndnvaldty->attribute( sc_node_attribute-i_cntrlpurcontritmcndnvaldtytp-centralpurchasecontractitem )->set( '00010' ).  
+    lo_itmcndnvaldty->attribute( sc_node_attribute-i_cntrlpurcontritmcndnvaldtytp-conditionvalidityenddate )->set( '20201231' ).  
+    lo_itmcndnvaldty->attribute( sc_node_attribute-i_cntrlpurcontritmcndnvaldtytp-conditionrecord )->set( '999999999' ).  
+    DATA(lo_itmcndnamount) = lo_itmcndnvaldty->create_child( sc_node-i_cntrlpurcontritmcndnamounttp ).  
+    lo_itmcndnamount->attribute( sc_node_attribute-i_cntrlpurcontritmcndnamounttp-centralpurchasecontract )->set( gc_ebeln ).  
+    lo_itmcndnamount->attribute( sc_node_attribute-i_cntrlpurcontritmcndnamounttp-centralpurchasecontractitem )->set( '00010' ).  
+    lo_itmcndnamount->attribute( sc_node_attribute-i_cntrlpurcontritmcndnamounttp-conditionvalidityenddate )->set( '20201231' ).  
+    lo_itmcndnamount->attribute( sc_node_attribute-i_cntrlpurcontritmcndnamounttp-conditionrecord )->set( '999999999' ).  
+    lo_itmcndnamount->attribute( sc_node_attribute-i_cntrlpurcontritmcndnamounttp-conditionsequentialnumber )->set( '01' ).  
+    DATA(lo_itmcndnamount1) = lo_itmcndnvaldty->create_child( sc_node-i_cntrlpurcontritmcndnamounttp ).  
+    lo_itmcndnamount1->attribute( sc_node_attribute-i_cntrlpurcontritmcndnamounttp-centralpurchasecontract )->set( gc_ebeln ).  
+    lo_itmcndnamount1->attribute( sc_node_attribute-i_cntrlpurcontritmcndnamounttp-centralpurchasecontractitem )->set( '00010' ).  
+    lo_itmcndnamount1->attribute( sc_node_attribute-i_cntrlpurcontritmcndnamounttp-conditionvalidityenddate )->set( '20201231' ).  
+    lo_itmcndnamount1->attribute( sc_node_attribute-i_cntrlpurcontritmcndnamounttp-conditionrecord )->set( '999999999' ).  
+    lo_itmcndnamount1->attribute( sc_node_attribute-i_cntrlpurcontritmcndnamounttp-conditionsequentialnumber )->set( '02' ).  
+    DATA(lo_itmcndnscales) = lo_itmcndnamount->create_child( sc_node-i_cntrlpurcontritmcndnscalestp ).  
+    lo_itmcndnscales->attribute( sc_node_attribute-i_cntrlpurcontritmcndnscalestp-centralpurchasecontract )->set( gc_ebeln ).  
+    lo_itmcndnscales->attribute( sc_node_attribute-i_cntrlpurcontritmcndnscalestp-centralpurchasecontractitem )->set( '00010' ).  
+    lo_itmcndnscales->attribute( sc_node_attribute-i_cntrlpurcontritmcndnscalestp-conditionvalidityenddate )->set( '20201231' ).  
+    lo_itmcndnscales->attribute( sc_node_attribute-i_cntrlpurcontritmcndnscalestp-conditionrecord )->set( '999999999' ).  
+    lo_itmcndnscales->attribute( sc_node_attribute-i_cntrlpurcontritmcndnscalestp-conditionsequentialnumber )->set( '01' ).  
+    lo_itmcndnscales->attribute( sc_node_attribute-i_cntrlpurcontritmcndnscalestp-conditionscaleline )->set( '0001' ).  
+    DATA(lo_set) = /bobf/cl_bunit_node_set=>create_with_node( lo_itmcndnscales ).  
+    DATA(lo_determination_result_c) = lo_set->execute_determination( sc_determination-i_cntrlpurcontritmcndnscalestp-check_and_enrich_itmcnd_scales ).  
+    mo_assert->determination_result( lo_determination_result_c )->has_no_failed_keys( ).
