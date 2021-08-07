@@ -32,7 +32,7 @@ Creational patterns are ones that create objects, rather than having to instanti
 - **Builder** constructs complex objects by separating construction and representation.
 - **Factory method** creates objects without specifying the exact class to create.
 - **Prototype** creates objects by cloning an existing object.
-- **Singleton** restricts object creation for a class to only one instance.
+- [**Singleton**](Singleton.abap) restricts object creation for a class to only one instance.
 
  
 
