@@ -11,6 +11,7 @@ INTERFACE if_lightningphone.
     uselightning.
 ENDINTERFACE.
 
+
 INTERFACE if_microusbphone.
   METHODS: recharge,
     usemicrousb.
@@ -23,6 +24,7 @@ CLASS cl_iphone DEFINITION.
   PRIVATE SECTION.
     DATA : connector TYPE boolean.
 ENDCLASS.
+
 
 CLASS cl_iphone IMPLEMENTATION.
 
@@ -69,14 +71,12 @@ ENDCLASS.
 
 
 
-
-
 CLASS cl_lightningtomicrousbadapter DEFINITION.
 
   PUBLIC SECTION.
-    METHODS: CONSTRUCTOR IMPORTING iv_lightningphone TYPE REF TO if_lightningphone,
-             usemicrousb,
-             recharge.
+    INTERFACES if_microusbphone.
+
+    METHODS: constructor IMPORTING iv_lightningphone TYPE REF TO if_lightningphone.
 
   PRIVATE SECTION.
     DATA : go_lightningphone TYPE REF TO if_lightningphone.
@@ -85,16 +85,16 @@ ENDCLASS.
 
 CLASS cl_lightningtomicrousbadapter IMPLEMENTATION.
 
-  METHOD CONSTRUCTOR.
+  METHOD constructor.
     me->go_lightningphone = iv_lightningphone.
   ENDMETHOD.
 
-  METHOD usemicrousb.
+  METHOD if_microusbphone~usemicrousb.
     WRITE :/ 'Micro USB Connected'.
     go_lightningphone->uselightning( ).
   ENDMETHOD.
 
-  METHOD recharge.
+  METHOD if_microusbphone~recharge.
     go_lightningphone->recharge( ).
   ENDMETHOD.
 
@@ -107,18 +107,22 @@ START-OF-SELECTION.
 
 
   WRITE: / 'Recharging iPhone with Lightning'.
+  DATA lo_if_lightning TYPE REF TO if_lightningphone.
   DATA(lo_iphone) = NEW cl_iphone( ).
-  lo_iphone->if_lightningphone~uselightning( ).
-  lo_iphone->if_lightningphone~recharge( ).
+  lo_if_lightning = lo_iphone.
+  lo_if_lightning->uselightning( ).
+  lo_if_lightning->recharge( ).
 
 
   SKIP 2.
 
 
   WRITE: / 'Recharging Android Phone with Micro USB'.
+  DATA lo_if_microusb TYPE REF TO if_microusbphone.
   DATA(lo_android) = NEW cl_androidphone( ).
-  lo_android->if_microusbphone~usemicrousb( ).
-  lo_android->if_microusbphone~recharge( ).
+  lo_if_microusb = lo_android.
+  lo_if_microusb->usemicrousb( ).
+  lo_if_microusb->recharge( ).
 
 
   SKIP 2.
@@ -126,6 +130,9 @@ START-OF-SELECTION.
 
   WRITE: / 'Recharging iPhone with Micro USB'.
   DATA(lo_iphone_new) = NEW cl_iphone( ).
-  DATA(lo_lightning_adapter) = NEW cl_lightningtomicrousbadapter( lo_iphone_new ).
-  lo_lightning_adapter->usemicrousb( ).
-  lo_lightning_adapter->recharge( ).
+  DATA lo_lightning_adapter TYPE REF TO if_microusbphone.
+  DATA lo_if_microusb_new TYPE REF TO if_microusbphone.
+  CREATE OBJECT lo_lightning_adapter TYPE cl_lightningtomicrousbadapter EXPORTING iv_lightningphone = lo_iphone_new.
+  lo_if_microusb_new = lo_lightning_adapter.
+  lo_if_microusb_new->usemicrousb( ).
+  lo_if_microusb_new->recharge( ).
