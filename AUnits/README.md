@@ -28,12 +28,12 @@ Sample Code
     DATA: lt_cepc_bukrs TYPE STANDARD TABLE OF cepc_bukrs.
     
       
-    lt_cepc = VALUE #( ( mandt = sy-mandt prctr = '10000001' datbi = '99993112' kokrs = 'CONA'  bukrs = '1111' verak = '' abtei = 'ADV01' khinr = '' stras = ''  name1 = '' name2 = '' name3 = '' name4 = '' pstlz = '' ort01 = '' land1 = 'US' regio = '' telf1 = '' lock_ind = '' )  
-                       ( mandt = sy-mandt prctr = '10000002' datbi = '99993112' kokrs = 'CONA' bukrs = '1112' verak = '' abtei = 'GRS01' khinr = 'US99999A' stras = '' name1 = '' name2 = '' name3 = '' name4 = '' pstlz = '' ort01 = '' land1 = 'US' regio = '' telf1 = '' lock_ind = '' ) ).  
+    lt_cepc = VALUE #( ( mandt = sy-mandt prctr = '10000001' datbi = '99993112' kokrs = 'ABCD'  bukrs = '1111' verak = '' abtei = 'ADV01' khinr = '' stras = ''  name1 = '' name2 = '' name3 = '' name4 = '' pstlz = '' ort01 = '' land1 = 'US' regio = '' telf1 = '' lock_ind = '' )  
+                       ( mandt = sy-mandt prctr = '10000002' datbi = '99993112' kokrs = 'ABCD' bukrs = '1112' verak = '' abtei = 'GRS01' khinr = 'US99999A' stras = '' name1 = '' name2 = '' name3 = '' name4 = '' pstlz = '' ort01 = '' land1 = 'US' regio = '' telf1 = '' lock_ind = '' ) ).  
     lo_environment->insert_test_data( lt_cepc ).
     
     
-    lt_cepc_bukrs = VALUE #( ( mandt = sy-mandt kokrs = 'CONA' prctr = '10000001' bukrs = '1111' ) 
+    lt_cepc_bukrs = VALUE #( ( mandt = sy-mandt kokrs = 'ABCD' prctr = '10000001' bukrs = '1111' ) 
                              ( mandt = sy-mandt kokrs = 'ABCD' prctr = '10000002' bukrs = '111' ) ).  
     lo_environment->insert_test_data( lt_cepc_bukrs ).
 
