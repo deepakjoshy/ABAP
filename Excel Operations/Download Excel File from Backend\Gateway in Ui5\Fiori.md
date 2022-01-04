@@ -7,7 +7,9 @@
 
 
 - Redefine the method '/IWBEP/IF_MGW_APPL_SRV_RUNTIME~GET_STREAM' in DPC_EXT Class
-Sample Code
+
+	*Sample Code*
+
       METHOD /iwbep/if_mgw_appl_srv_runtime~get_stream.
     
         DATA : ls_stream     TYPE ty_s_media_resource,
