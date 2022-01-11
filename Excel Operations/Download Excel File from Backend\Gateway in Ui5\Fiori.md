@@ -49,21 +49,34 @@
                                                       t_fieldcatalog              = lt_fcat   )
             IMPORTING
               er_result_file       = DATA(r_xstring) ).
-        
-		
-		    ls_stream-value = r_xstring.
- 		    ls_stream-mime_type = 'application/msexcel'. 
-        copy_data_to_ref( EXPORTING is_data = ls_stream   CHANGING  cr_data = er_stream ). 
+	      
+		     ls_stream-value = r_xstring.
+		     ls_stream-mime_type = 'application/msexcel'. 
+		     copy_data_to_ref( EXPORTING is_data = ls_stream   CHANGING  cr_data = er_stream ). 
     
-        DATA : ls_lheader     TYPE ihttpnvp.
-        ls_lheader-name = 'Content-Disposition'.
-        ls_lheader-value = |inline; filename="Sample_Report.xlsx"|.
-        set_header( is_header = ls_lheader ).
+			DATA : ls_lheader     TYPE ihttpnvp.
+			ls_lheader-name = 'Content-Disposition'.
+			ls_lheader-value = |inline; filename="Sample_Report.xlsx"|.
+			set_header( is_header = ls_lheader ).
     
       ENDMETHOD.
 
 
+- Redefine the method 'DEFINE' in MPC_EXT Class
 
+```
+	METHOD define. 
+          super->define( ).
+	  DATA: lo_entity   TYPE REF TO /iwbep/if_mgw_odata_entity_typ,
+          lo_property TYPE REF TO /iwbep/if_mgw_odata_property.
+
+	  lo_entity = model->get_entity_type( iv_entity_name = 'File' ).   //Entity Name for the File 
+	    IF lo_entity IS BOUND.
+	      lo_property = lo_entity->get_property( iv_property_name = 'Filename').
+	      lo_property->set_as_content_type( ).
+	    ENDIF.
+	ENDMETHOD.
+```
 
 ###### Frontend Ui5/Fiori Code 
 
