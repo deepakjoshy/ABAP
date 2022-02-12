@@ -1,5 +1,5 @@
 
-## Commit/Rollback Work Events
+## COMMIT/ROLLBACK Work Events
 
 When a transaction is finished the data is either persisted or rolled back using the commands- COMMIT WORK ( & WAIT) or ROLLBACK WORK.
 
