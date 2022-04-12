@@ -1,0 +1,1264 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=windows-1252">
+	<TITLE></TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice 4.1.7  (Win32)">
+	<META NAME="CREATED" CONTENT="20220412;8512701">
+	<META NAME="CHANGED" CONTENT="20220412;8563886">
+	<STYLE TYPE="text/css">
+	<!--
+		@page { margin: 2cm }
+		P { margin-bottom: 0.21cm }
+		H2 { margin-bottom: 0.21cm }
+		H2.cjk { font-family: "SimSun" }
+		H2.ctl { font-family: "Arial" }
+		H3 { margin-bottom: 0.21cm }
+		H3.cjk { font-family: "SimSun" }
+		H3.ctl { font-family: "Arial" }
+		H1 { margin-bottom: 0.21cm }
+		H1.western { font-family: "Times New Roman", serif }
+		H1.cjk { font-family: "SimSun" }
+		H1.ctl { font-family: "Arial" }
+		A:link { so-language: zxx }
+	-->
+	</STYLE>
+</HEAD>
+<BODY LANG="en-IN" DIR="LTR">
+<H2 CLASS="western"><A NAME="sigil_toc_id_2"></A>&nbsp;SOA monitoring
+and error handling</H2>
+<P>When services are exposed by SAP application systems other systems
+can call them and in an ideal world, everything would always work. In
+reality, many of the calls from the consumer application do not
+execute properly on the web service provider systems. There can be
+many reasons for this:</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm">The consumer sent the <B>wrong
+	information</B> (i.e. the message does not contain all of the
+	required fields). 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm">The consumer sent the message in
+	the <B>wrong order</B> (i.e. deletion of a business transaction
+	before creation). 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm">The consumer sent <B>incomplete
+	information</B> (connectivity issues). 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm">The provider may <B>not</B> be
+	<B>ready</B> to receive the message (i.e. master data is not
+	synchronized). 
+	</P>
+	<LI><P>The provider may <B>not</B> be <B>able</B> to process the
+	information (i.e. the system is down at the moment). 
+	</P>
+</UL>
+<P>There are many situations in which SOA integration scenarios will
+not work as planned and need to be fixed immediately. In order to be
+prepared to handle these cases quickly, some SOA integration
+scenarios need to be monitored. For some, we need to design and
+implement a set of proper error handling techniques.</P>
+<P>What are the different kinds of SOA integration scenarios? We can
+divide SOA scenarios into a few categories and decide which of them
+need to be monitored. The most basic criteria is the difference
+between synchronous and asynchronous SOA scenarios. Synchronous
+scenarios always give the resulting information back to the consumer
+application so in this case, it&rsquo;s not necessary to be able to
+monitor them on the provider application systems as the consumer will
+always be aware of the status of the message and can always restart
+the message. Synchronous applications in most cases also need to be
+processed very quickly as the other application is waiting for the
+result. This is the second reason why we don&rsquo;t want to slow
+them down by doing additional persistence steps in order to be able
+to monitor them. On the other hand, asynchronous messages cannot be
+restarted from the consumer application if there is an error because
+the consumer does not know the status of the message. In this case,
+the processing speed is also not as important as in the case of
+synchronous applications. This provides the opportunity to implement
+a set of monitoring and error handling functions.</P>
+<P>The second question is: Where should you monitor SOA integration
+scenarios? You can do that in a few different types of systems:</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm"><B>Backend application
+	systems</B>&mdash;this is where the service is implemented and where
+	you can get the most information about it in the event of an error.
+	This is also the system in which the people who are responsible for
+	business transactions have access to as they are constantly working
+	on it. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm"><B>Enterprise service bus
+	(ESB)</B>&mdash;many companies utilize a single system that is
+	responsible for connecting all application systems with each other.
+	This is also a good place to monitor interfaces as it is the central
+	point for all SOA mediated scenarios. SAP Process Orchestration is a
+	typical example of an ESB used for such purposes. 
+	</P>
+	<LI><P><B>Other monitor applications</B>&mdash;companies can have a
+	rule to send all kinds of errors to a special system used only for
+	error monitoring. In many cases, this is closely coupled with a
+	ticketing system, which can be used for assigning people to
+	different kinds of incidents. SAP Solution Manager is a typical
+	example of system used for this purpose.</P>
+</UL>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<OL>
+	<LI VALUE=1><P STYLE="margin-bottom: 0cm">Monitoring and error
+	handling of SOA integration scenarios can be initiated in many other
+	places (ESB, external monitoring applications, etc.). However, in
+	most cases in order to be able to find out the real cause of the
+	issue, we need to do the monitoring in the backend application
+	system because this is the place from where we can obtain the most
+	detailed error information and reprocess the transaction. 
+	</P>
+	<LI VALUE=2><P>Different companies use different ESBs and external
+	monitoring applications. 
+	</P>
+</OL>
+<P>Error handling is part of a SOA integration scenario monitoring
+and is the second most important aspect as the web service layer does
+not provide any special tools for completing this task. SAP backend
+application systems can use a wide range of special applications
+designed for error handling and in Chapter 1.3 we will briefly review
+them. First, however, we need to define what kind of functions we
+would expect from these tools:</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm"><B>Displaying messages</B> in a
+	readable way for most humans&mdash;this means that the message
+	should be easy to read for anyone (not just for people with IT
+	skills). 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm"><B>Changing the data</B> of the
+	message&mdash;in some cases a message&lsquo;s data (values for
+	certain fields) needs to be changed before reprocessing it. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm"><B>Restarting failed messages</B>&mdash;both
+	automated and scheduled. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm"><B>Restarting</B> a specific type
+	of an error&mdash;not all errors can be handled in the same way, so
+	it does not make sense to reprocess all messages in the same manner.
+		</P>
+	<LI><P STYLE="margin-bottom: 0cm"><B>Ability to retrieve the error
+	information</B>&mdash;in an easy way to be able to track down the
+	issue. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm"><B>Cancelling the
+	message</B>&mdash;sometimes messages need to be cancelled as the new
+	messages will be distributed from the sender system. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm"><B>Error notification</B>&mdash;automated
+	error propagation to the responsible users. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm"><B>Linking of messages to
+	transaction/object</B>&mdash;monitoring transactions need to be able
+	to redirect to customizing or transaction data. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm"><B>Content-based error
+	searching</B>&mdash;users need to be able to find a message on the
+	basis of specific information stored inside the message. 
+	</P>
+	<LI><P><B>Data access authorization</B>&mdash;not all users are
+	allowed to access the content of all messages so there needs to be
+	an authorization framework utilization.</P>
+</UL>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<H2 CLASS="western" STYLE="page-break-before: always"><A NAME="sigil_toc_id_3"></A>
+1.3&nbsp;&nbsp;&nbsp;Tools for monitoring SOA scenarios</H2>
+<P>A few of the most commonly used applications for monitoring SOA
+integration scenarios in SAP backend application systems include:</P>
+<OL>
+	<LI VALUE=1><P STYLE="margin-bottom: 0cm"><B>Local Integration
+	Engine monitor</B>&mdash;standard monitor available and enabled in
+	all SAP systems. 
+	</P>
+	<LI VALUE=2><P STYLE="margin-bottom: 0cm"><B>Forward Error
+	Handling/Error and Conflict Handler</B> (FEH/ECH)&mdash;additional
+	monitor available in all SAP systems, but not enabled in standard. 
+	</P>
+	<LI VALUE=3><P><B>SAP Application Integration Framework
+	(AIF)</B>&mdash;additional monitoring component which can be
+	acquired in order to monitor SOA integration scenarios. 
+	</P>
+</OL>
+<H3 CLASS="western">1.3.1&nbsp;&nbsp;&nbsp;Local Integration Engine
+Monitor</H3>
+<P>Local Integration Engine Monitor is a standard tool which allows
+monitoring of SOA scenarios. In order to open the Local Integration
+Engine Monitor start the transaction code SXMB_MONI and select
+Monitor for Processed XML Messages, or directly with transaction code
+SXI_MONITOR.</P>
+<P><IMG SRC="../images/00006.jpeg" NAME="graphics1" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 1.1: Local Integration Engine Monitor</P>
+<P>The local Integration Engine Monitor is a very simple tool and
+some of its functions are available in a limited scope including (see
+Figure 1.1):</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm"><B>Payload editor</B>&mdash;payload
+	editor is based on XML message structures so it&rsquo;s very
+	difficult to read for users who are not familiar with XML messages. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm"><B>Authorization concept</B>&mdash;it&rsquo;s
+	not possible to restrict access to certain messages on the basis of
+	the content of SOA messages, you can only do that on using message
+	header fields like interface name, sender/receiver system, etc. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm"><B>Automated restarting</B>&mdash;it&rsquo;s
+	not possible to restart certain types of errors because restarting
+	is only possible on a more general level. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm"><B>Successful message
+	monitoring&mdash;</B>complicated monitoring of successful log
+	messages (i.e. created document numbers for transaction data). 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm"><B>It&rsquo;s not possible to add
+	tips/hints</B> for error processing in the event of an error that
+	occurs frequently. 
+	</P>
+	<LI><P><B>Document linking</B>&mdash;it&rsquo;s not possible to
+	navigate from the XML message to any customizing table related to
+	the error. 
+	</P>
+</UL>
+<H3 CLASS="western">1.3.2&nbsp;&nbsp;&nbsp;Forward Error
+Handling/Error and Conflict Handler</H3>
+<P>Forward Error Handling is a concept which allows processing errors
+in the provider system with the use of Error and Conflict Handler.
+Errors that occur during data conversion and business function
+processing can be monitored and handled by business users or system
+administrators. You can start this monitor with transaction code
+ECH_MONI_SEL which will start the Error and Conflict Handler as shown
+in Figure 1.2.</P>
+<P><IMG SRC="../images/00007.jpeg" NAME="graphics2" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 1.2: ECH monitor</P>
+<P>Error and Conflict Handler is a much more advanced tool compared
+to the Local Integration Engine monitor. However, there are still
+some functions that are not available including:</P>
+<P><B>Authorization concept</B>&mdash;it&rsquo;s not possible to
+restrict access to certain messages on the basis of the content of
+SOA messages, you can only do that on using message header fields
+like interface name, sender/receiver system, etc. 
+</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm"><B>Automated restarting</B>&mdash;it&rsquo;s
+	not possible to restart certain types of errors because restarting
+	is only possible on a more general level. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm"><B>Successful message
+	monitoring&mdash;</B>complicated monitoring of successful log
+	messages (i.e. created document numbers for transaction data). 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm"><B>It&rsquo;s not possible to add
+	tips/hints</B> for error processing in the event of an error that
+	occurs frequently. 
+	</P>
+	<LI><P><B>Document linking</B>&mdash;it&rsquo;s not possible to
+	navigate from the XML message to any customizing table related to
+	the error. 
+	</P>
+</UL>
+<H3 CLASS="western">1.3.2&nbsp;&nbsp;&nbsp;Forward Error
+Handling/Error and Conflict Handler</H3>
+<P>Forward Error Handling is a concept which allows processing errors
+in the provider system with the use of Error and Conflict Handler.
+Errors that occur during data conversion and business function
+processing can be monitored and handled by business users or system
+administrators. You can start this monitor with transaction code
+ECH_MONI_SEL which will start the Error and Conflict Handler as shown
+in Figure 1.2.</P>
+<P><IMG SRC="../images/00007.jpeg" NAME="graphics3" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 1.2: ECH monitor</P>
+<P>Error and Conflict Handler is a much more advanced tool compared
+to the Local Integration Engine monitor. However, there are still
+some functions that are not available including:</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm"><B>Outbound asynchronous message
+	monitor&mdash;</B>it&rsquo;s not possible to monitor errors for
+	outbound SOA integration scenarios. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm"><B>Successful message
+	monitoring</B>&mdash;Error and Conflict Handler can only monitor
+	messages which resulted in an error&mdash;all correctly processed
+	messages still need to be monitored using Local Integration Engine
+	monitor. 
+	</P>
+	<LI><P><B>Authorization concept</B>&mdash;it&rsquo;s not possible to
+	restrict access to certain messages on the basis of the content of
+	SOA messages, you can only do that using message header fields like
+	interface name, sender/receiver system, etc. 
+	</P>
+</UL>
+<H3 CLASS="western">1.3.3&nbsp;&nbsp;&nbsp;SAP Application Interface
+Framework</H3>
+<P>SAP Application Interface Framework is an add-on for SAP Business
+Suite systems which, among many other functions, has a business user
+friendly user interface implementation and provides a set of very
+sophisticated SOA monitoring and error handling tools.</P>
+<P>You can start this monitor shown in Figure 1.3 with transaction
+code /AIF/ERR.</P>
+<P><IMG SRC="../images/00008.gif" NAME="graphics4" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 1.3: AIF error monitor&mdash;SAP GUI version</P>
+<P>Application Interface Framework appears to be the most powerful of
+the three tools mentioned as it has all the missing functionality of
+the previous tools, but it also has a few drawbacks:</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm"><B>Automated restarting</B>&mdash;available
+	as of AIF 2.0 service pack 03 only. 
+	</P>
+	<LI><P><B>License cost</B>&mdash;as it&rsquo;s a separate add-on
+	from SAP, it requires an additional license.</P>
+</UL>
+<P><B>Outbound asynchronous message monitor&mdash;</B>it&rsquo;s not
+possible to monitor errors for outbound SOA integration scenarios. 
+</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm"><B>Successful message
+	monitoring</B>&mdash;Error and Conflict Handler can only monitor
+	messages which resulted in an error&mdash;all correctly processed
+	messages still need to be monitored using Local Integration Engine
+	monitor. 
+	</P>
+	<LI><P><B>Authorization concept</B>&mdash;it&rsquo;s not possible to
+	restrict access to certain messages on the basis of the content of
+	SOA messages, you can only do that using message header fields like
+	interface name, sender/receiver system, etc. 
+	</P>
+</UL>
+<H3 CLASS="western">1.3.3&nbsp;&nbsp;&nbsp;SAP Application Interface
+Framework</H3>
+<P>SAP Application Interface Framework is an add-on for SAP Business
+Suite systems which, among many other functions, has a business user
+friendly user interface implementation and provides a set of very
+sophisticated SOA monitoring and error handling tools.</P>
+<P>You can start this monitor shown in Figure 1.3 with transaction
+code /AIF/ERR.</P>
+<P><IMG SRC="../images/00008.gif" NAME="graphics5" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 1.3: AIF error monitor&mdash;SAP GUI version</P>
+<P>Application Interface Framework appears to be the most powerful of
+the three tools mentioned as it has all the missing functionality of
+the previous tools, but it also has a few drawbacks:</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm"><B>Automated restarting</B>&mdash;available
+	as of AIF 2.0 service pack 03 only. 
+	</P>
+	<LI><P><B>License cost</B>&mdash;as it&rsquo;s a separate add-on
+	from SAP, it requires an additional license. 
+	</P>
+</UL>
+<P>In the following chapters, we will explore how to customize those
+three tools in order to be able to maximize their full potential.</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<H1 CLASS="western" STYLE="page-break-before: always"><A NAME="calibre_pb_0"></A>
+2&nbsp;&nbsp;&nbsp;Local Integration Engine Monitor</H1>
+<P>Local Integration Engine Monitor is the most well known and most
+commonly used application for monitoring SOA integration scenarios in
+backend application systems. There&rsquo;s very little configuration
+required to make it run, but it has some features which can make it
+much easier to use. We will explore those features in this chapter.</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<H2 CLASS="western"><A NAME="sigil_toc_id_4"></A>2.1&nbsp;&nbsp;&nbsp;Activation
+and initial configuration</H2>
+<P>In standard SAP, the Local Integration Engine Monitor does not
+require any activation and both kinds of asynchronous web services
+(mediated and point-to-point) will run through this monitor.</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<H2 CLASS="western"><A NAME="sigil_toc_id_5"></A>2.2&nbsp;&nbsp;&nbsp;Message
+monitoring and error monitoring</H2>
+<P>Message monitoring and error monitoring is done with the same
+tool&mdash;transaction SXMB_MONI &bull; Monitor for Processes XML
+Messages, or directly from transaction SXI_MONITOR.</P>
+<P>There are a number of standard selection criteria like
+sender/receiver interface name, namespace, system, as well as some
+more advanced selection criteria like Message ID, Error ID, etc. (see
+Figure 2.1).</P>
+<P><IMG SRC="../images/00009.jpeg" NAME="graphics6" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 2.1: Advanced selection criteria</P>
+<P>After we run the selection, we can see all of the messages. If we
+double-click on any of them, we can see the contents of the message
+in the Inbound Message &bull; Payloads &bull; Main Document section
+(see Figure 2.2).</P>
+<P><IMG SRC="../images/00010.gif" NAME="graphics7" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 2.2: Content of the SOAP message</P>
+<P>In the event of an error, we will be able to see the red flag and
+short status on the first screen of the application. If the web
+service was using a fault message type and was programmed correctly,
+then we can see some additional details by clicking on the red flag
+as shown in Figure 2.3 below.</P>
+<P><IMG SRC="../images/00011.jpeg" NAME="graphics8" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 2.3: Error monitoring</P>
+<P>Fault message type</P>
+<P><IMG SRC="../images/00005.gif" NAME="graphics9" ALT="Watchout" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0>Fault
+message types are structures in which detailed information on an
+error is propagated to. All custom asynchronous web services should
+always use fault message types as this facilities message monitoring
+(among other things).</P>
+<P>A more detailed error description, or any other error information,
+can always be found by drilling down into the message content
+(double-click on the message) and by opening the error section of the
+SOAP Header as shown in Figure 2.4.</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P><IMG SRC="../images/00012.gif" NAME="graphics10" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 2.4: Error section of the SOAP header</P>
+<P>As we can see, message and error monitoring with the use of Local
+Integration Engine Monitor is primarily done with the use of XML
+messages. The expectation is that the user knows how to work with XML
+standard. For that reason, it is not very user friendly compared to
+other SAP SOA integration monitoring tools.</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<H2 CLASS="western"><A NAME="sigil_toc_id_6"></A>2.3&nbsp;&nbsp;&nbsp;Message
+reprocessing</H2>
+<P>Message reprocessing is one of the most typical tasks during
+day-to-day work with SOA integration scenarios. Messages tend to fail
+for different reasons and they either need to be reprocessed (which
+in some cases means that the content of the message also needs to be
+changed), or cancelled. A message which cannot or should not be
+reprocessed needs to be cancelled. A cancelled message is the only
+identification that an error was checked and proper action was taken.
+You can cancel messages directly from monitoring transaction by
+selecting the message that you want to cancel and Edit &bull; Cancel
+Message with Errors from the menu (see Figure 2.5).</P>
+<P><IMG SRC="../images/00013.jpeg" NAME="graphics11" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 2.5: Cancelling messages from the message monitor</P>
+<P>It&rsquo;s also possible to cancel messages from a special program
+called RSXMB_CANCEL_MESSAGES. In the event that you need to cancel a
+lot of messages, it is advisable to run it with this program.</P>
+<P>RSXMB_CANCEL_MESSAGES&mdash;test mode</P>
+<P><IMG SRC="../images/00005.gif" NAME="graphics12" ALT="Watchout" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0>Each
+time you use this special program to cancel messages, you should run
+it first in the test mode to see if the selection criteria you&rsquo;ve
+used selects the correct messages. Only after you&rsquo;re sure that
+the selection was correct, run the program once more without test
+mode turned on.</P>
+<P>If we know that the message can be reprocessed manually, which
+means that the error should no longer happen, we can deal with it
+similarly as cancelling the message. We need to select the message
+and click on the restart button in the menu (see Figure 2.6).</P>
+<P><IMG SRC="../images/00014.gif" NAME="graphics13" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 2.6: Restarting messages from transaction SXMB_MONI</P>
+<P>However, unlike message cancelling manual restarting does not
+occur very often. Messages can fail due to number of reasons, some of
+the most common are:</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm">missing master data 
+	</P>
+	<LI><P>locked objects 
+	</P>
+</UL>
+<P>In those cases, sometimes we don&rsquo;t need any manual
+intervention so we can schedule automated message reprocessing with
+the program RSXMB_RESTART_MESSAGES. In typical landscapes, we run
+this program every few minutes so that interface operators can
+concentrate on the issues which cannot be reprocessed automatically
+and, in most cases, require some other manual intervention.</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<H2 CLASS="western"><A NAME="sigil_toc_id_7"></A>2.4&nbsp;&nbsp;&nbsp;Content-based
+Message Search</H2>
+<P>One of the most typical tasks while performing SOA integration
+scenarios monitoring is searching for messages. You either need to
+find a few incorrect messages among many other failed messages if
+there are only a few that you need to take care of in the first
+place, or someone from the business team may not be sure if one of
+the messages got processed and needs to search among the successfully
+processed messages to confirm that integration scenario was executed
+correctly at the messaging layer too. In such cases, a typical search
+criteria like:</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm">sender system 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm">interface name 
+	</P>
+	<LI><P>interface namespace, etc. 
+	</P>
+</UL>
+<P>may not be enough as we want to do a search on the basis of the
+content of the message with the use of some significant fields which
+are unique for a single message, like order number, delivery number,
+material number, etc. In order to do that with the Local Integration
+Engine monitor, we need to customize the monitor using transaction
+SXMS_LMS_CONF. There are two things that need to be customized:</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm"><B>Filter</B>&mdash;this is where
+	you determine which message type you&rsquo;d like to search for
+	content-based message values. 
+	</P>
+	<LI><P><B>Search Criteria</B>&mdash;configuration that specifies
+	which values of the payload will be used for searching. 
+	</P>
+</UL>
+<P>In order to create a new filter, you need to use the add new
+filter button (the one with plus icon from Figure 2.7 below).</P>
+<P><IMG SRC="../images/00015.gif" NAME="graphics14" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 2.7: Adding a new filter</P>
+<P>On the filter creation screen you need to populate the mandatory
+values (see Figure 2.8):</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm">Name&mdash;provide the interface
+	name. 
+	</P>
+	<LI><P>Namespace&mdash;provide the interface namespace. 
+	</P>
+</UL>
+<P>The rest of the values are not required, but if you want to limit
+indexing of unnecessary messages you can also populate them.</P>
+<P><IMG SRC="../images/00016.gif" NAME="graphics15" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 2.8: Filter creation</P>
+<P>Filter activation</P>
+<P><IMG SRC="../images/00005.gif" NAME="graphics16" ALT="Watchout" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0>It&rsquo;s
+not possible to activate the filter during the filter creation step
+because the filter can only be activated after the search criteria
+section of this transaction is also entered.</P>
+<P>Once the filter is created, double-click on the filter and move to
+the bottom of the screen in order to find the Search Criteria
+section. We can add the new criteria in the same way that we created
+the filter by using the button with the Add icon. On the new Search
+Criteria screen enter the name of the search criteria, which in most
+cases would be similar to the name of the type of value we&rsquo;re
+looking for. We also need to enter the XPath to the value of field in
+the message that we want to use for searching. In the example from
+Figure 2.9, we will be searching for the purchase order number which
+has a field name ID in the node (XML Segment) Purchase Order.</P>
+<P><IMG SRC="../images/00004.jpeg" NAME="graphics17" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0>XPath
+(XML Path Language) is a language which allows selecting fields from
+the XML documents. As all SOA integration scenarios are based on XML
+messages, this is the perfect tool for navigating inside the web
+services based on SAP Global Data Types. For more details on XPath
+expressions that can be used in the filter creation. I advise looking
+at XPath examples on the Internet.</P>
+<P>The second way to define the search criteria apart from using the
+XPath, is to use a Dynamic Header. This kind of extractor searches
+for adapter specific message attributes from SAP Process
+Orchestration.</P>
+<P>By default, the content-based message values will be extracted
+during the processing of new messages (Extract During Message
+Processing). However, if you want to search the messages that were
+already processed you need to select the second option&mdash;Extract
+with External Job.</P>
+<P>Once the search criteria is created, you need to go and activate
+the filter in change mode by selecting the activate checkbox. Once
+you do that, the status of the Search Criteria will become green as
+shown in Figure 2.10, which means that the filter is working.</P>
+<P><IMG SRC="../images/00018.jpeg" NAME="graphics18" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 2.10: Activated Filter</P>
+<P>If you need to search for values from the already processed
+messages we need to run program SXMS_EXTRACT_MESSAGES. This program
+will index values from the old messages so they can be used for
+searching.</P>
+<P>Indexing</P>
+<P><IMG SRC="../images/00004.jpeg" NAME="graphics19" ALT="Tip" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0>Indexing
+content-based message search means searching for values from a
+predefined set of filters and putting them into a separate table
+where the can be accessed quickly, without the need to search the
+content of the whole message again.</P>
+<P>You can select the criteria in order to minimize the time required
+to run the indexing program by choosing some filter values. In Figure
+2.11 we choose to index all messages from the last 60 minutes only.</P>
+<P><IMG SRC="../images/00019.jpeg" NAME="graphics20" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 2.11: Indexing program for already processed messages</P>
+<P>In the program output, you can already see if the extraction was
+successful. If the search criteria for a customize</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P>In the program output, you can already see if the extraction was
+successful. If the search criteria for a customized filter is visible
+as in Figure 2.12 below and any kind of value is populated, that
+means the filter is working and can be used for searching messages
+later on.</P>
+<P><IMG SRC="../images/00020.jpeg" NAME="graphics21" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 2.12: Extraction log</P>
+<P>Missing values in the extraction log</P>
+<P><IMG SRC="../images/00005.gif" NAME="graphics22" ALT="Watchout" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0>If
+values are missing from the extraction log, it can mean that the
+XPath was not created correctly.</P>
+<P>We can test if the filter is working in transaction SXMB_MONI by
+selecting the User-Defined Selection Criteria and by populating it
+with the value of the field which should be used for searching as
+shown in Figure 2.13 below.</P>
+<P><IMG SRC="../images/00021.jpeg" NAME="graphics23" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 2.13: User-defined message search in SXMB_MONI</P>
+<P>If the selection was successful, then on the result output screen
+we should be able to see only the message with the specified value in
+the content. When we select it and use the Attributes button from the
+menu, as shown in Figure 2.14 below, we should be able to see all
+Search Criteria defined for those messages.</P>
+<P><IMG SRC="../images/00022.jpeg" NAME="graphics24" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 2.14: Content-based attributes of the message</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<H1 CLASS="western" STYLE="page-break-before: always"><A NAME="calibre_pb_01"></A>
+3&nbsp;&nbsp;&nbsp;Forward Error Handling and Error and Conflict
+Handler</H1>
+<P>Forward Error Handling (FEH) together with Error and Conflict
+Handler (ECH) are the tools that work together with Local Integration
+Monitor, but extend many of its limitations. In this chapter, we will
+take a closer look at the advanced features of both FEH and ECH.</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<H2 CLASS="western"><A NAME="sigil_toc_id_8"></A>3.1&nbsp;&nbsp;&nbsp;Concept</H2>
+<P>Forward Error Handling is a framework designed on systems with an
+ABAP backend, meaning most SAP application systems (ECC, SRM, CRM,
+etc.). You can utilize this framework to implement SOA integration
+scenarios for inbound messages (service providers). The idea behind
+the concept is that according to SAP development best practices for
+asynchronous communication (in contrast to synchronous
+communication), the receiving systems should be responsible for
+solving the error instead of propagating the error information back
+to the sender system. The receiving system is closer to the root of
+the error and in most cases, it will be much easier to solve it
+there. While it&rsquo;s possible to use acknowledgments to notify the
+sender, not many applications in the SOA world can work with them.
+The FEH concept is an alternative approach to the majority of SOA
+integration scenarios.</P>
+<P>What are acknowledgments?</P>
+<P><IMG SRC="../images/00004.jpeg" NAME="graphics25" ALT="Tip" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0>Acknowledgments
+are a type of message distributed from the receiver system to the
+sender system that enable sending confirmation messages that nofity
+that the receiver application received the message from the sender.
+SAP distinguishes two types of acknowledgments: system, which are
+used by the runtime and confirm that the messages were received and
+application, which confirm the status of the processed message at the
+receiver application (successfully processed or not). In case using
+SAP-to-SAP communication for SOA integration scenarios, it&rsquo;s
+possible to use acknowledgments with ABAP proxies.</P>
+<P>Most SAP standard Enterprise Services use the FEH concept and new,
+custom SOA services should also be developed in a way in which they
+can work according to the FEH framework. This means that if the
+application issues an error message, the receiver will not reject the
+message and will not send any information back to the sender.
+Instead, the receiver system will try to solve the issue itself
+either by restarting the message in case of a temporary error, or
+will notify business users which can help solving it either by
+correcting the message, changing the customizing settings, or in some
+cases by entering transactional or master data.</P>
+<P>Forward Error Handling in SAP applications is implemented using
+the Error and Conflict Handler (ECH), which is a tool used for
+solving errors initiated by asynchronous message processes. Error and
+Conflict Handler works heavily with two internal components:</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm">Post Processing Office
+	(PPO)&mdash;Responsible for creating and processing orders (all
+	messages processed with PPO are called orders). 
+	</P>
+	<LI><P>Hierarchical Derivation Service (HDS)&mdash;Responsible for
+	determining the correct resolution strategy. 
+	</P>
+</UL>
+<P>The relationship between FEH and ECH</P>
+<P><IMG SRC="../images/00004.jpeg" NAME="graphics26" ALT="Tip" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0>The
+Forward Error Handling concept is implemented in SAP ABAP backend
+systems with the use of Error and Conflict Handler so both of them
+work closely together. From the SOA Integration monitoring
+perspective, we can regard them as the same tool.</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<H2 CLASS="western"><A NAME="sigil_toc_id_9"></A>3.2&nbsp;&nbsp;&nbsp;Activation
+and initial configuration</H2>
+<P>Most SAP standard Enterprise Services as of enhancement package 5
+for ERP 6.0, use FEH/ECH by default. In order to start using it as an
+additional (to Local Integration Engine Monitor) monitor, we only
+need to activate it. Activation of FEH/ECH is a global setting that
+affects all Enterprise Services where FEH/ECH has been implemented.
+In the case of custom build SOA integration scenarios, there&rsquo;s
+a set of coding rules that need to be implemented so the scenario can
+start using the full power of FEH/ECH. As this book is focused on
+monitoring, we will only concentrate on customizing the monitoring
+features and less on the interface development related activities.</P>
+<P>In order to activate the Forward Error Handling and Error and
+Conflict Hander, you need to open customizing and using the following
+menu path create a new table entry as shown in Figure 3.1: SPRO &bull;
+Cross-Application Components Processes and Tools for Enterprise
+Applications &bull; Enterprise Services Error and Conflict Handler &bull;
+Activate Error and Conflict Handler.</P>
+<P><IMG SRC="../images/00023.jpeg" NAME="graphics27" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.1: FEH/ECH activation</P>
+<P>This activity will enable FEH/ECH for all SAP standard Enterprise
+Services where FEH was used.</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<H2 CLASS="western"><A NAME="sigil_toc_id_10"></A>Message monitoring
+and error monitoring</H2>
+<P>Message monitoring using FEH/ECH is distributed among two
+transactions. When the message is processed successfully, we can only
+monitor it in the Local Integration Engine Monitor with all its
+limitations. If there was an error in the initial status of the
+message, only then can the message be monitored in Post Processing
+Office (PPO) of FEH/ECH.</P>
+<P>Post Processing Office</P>
+<P><IMG SRC="../images/00004.jpeg" NAME="graphics28" ALT="Tip" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0>Post
+Processing Office is a tool that replaces the application log for any
+business related error processing.</P>
+<P>You can start the SOA integration scenario monitoring by using
+transaction SXI_MONITOR, which opens up the Local Integration Engine
+Monitor. If the message is not successful and FEH/ECH was activated
+and implemented for the provider service, we can see the new status
+icon (green arrow) next to the message as shown in Figure 3.2. This
+specifies that the message was forwarded to the external application,
+which would be the Post Processing Office.</P>
+<P><IMG SRC="../images/00024.jpeg" NAME="graphics29" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.2: Link between Local Integration Engine Monitor and Post
+Processing Office</P>
+<P>Local Integration Engine Monitor in FEH/ECH</P>
+<P><IMG SRC="../images/00004.jpeg" NAME="graphics30" ALT="Tip" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0>It&rsquo;s
+still always possible to display the message in Local Integration
+Engine Monitor, but there&rsquo;s no need to do that if the service
+is using FEH/ECH as Post Processing Office is much more advanced
+monitor compared to the Local Integration Engine Monitor.</P>
+<P>If we select the icon for transfer to the external application, we
+are taken directly to the Post Processing Office. Alternatively, we
+can use transaction ECH_MONI_SEL, which opens the initial screen of
+PPO where you can find many selection criteria for searching messages
+as shown in Figure 3.3.</P>
+<P><IMG SRC="../images/00025.jpeg" NAME="graphics31" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.3: Selection criteria from transaction ECH_MONI_SEL</P>
+<P>As the selection criteria we can use:</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm">Technical message attributes like
+	service interface, service operation, namespace, etc. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm">Values from the content of the
+	message&mdash;payload attributes. 
+	</P>
+	<LI><P>Business related information&mdash;business process and
+	component. 
+	</P>
+</UL>
+<P>Business Process and Component</P>
+<P><IMG SRC="../images/00004.jpeg" NAME="graphics32" ALT="Tip" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0>Business
+Process and Component are types of objects linked to messages, used
+in PPO to segregate messages which resulted in an error.</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P>Once we open up the selection in transaction ECH_MONI_SEL, we
+should be able to see the error messages segregated by the main
+object together with the error description in the status column as
+shown in Figure 3.4.</P>
+<P><IMG SRC="../images/00026.jpeg" NAME="graphics33" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.4: Error message on the initial screen of PPO</P>
+<H3 CLASS="western">3.3.1&nbsp;&nbsp;&nbsp;Post Processing Office
+detailed screen</H3>
+<P>If we double-click on the entry, the transaction takes us to the
+detailed screen of the Post Processing Office. The detailed screen is
+divided into four areas as shown in Table 3.1.</P>
+<P><IMG SRC="../images/00027.gif" NAME="graphics34" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Table 3.1: Areas of detailed screen for PPO</P>
+<P><B>Header area</B>&mdash;the header area provides the most
+important information about the error such as the main object used in
+the message, business process description (which in many cases would
+be the service interface name of the enterprise service used in SOA
+integration scenario), main error message which caused the failure,
+and order status (the status of the message processing). You can also
+enter a short comment that will be recorded when you save or process
+the selected entry. A typical header area is shown in Figure 3.5.</P>
+<P>Service Interface</P>
+<P><IMG SRC="../images/00004.jpeg" NAME="graphics35" ALT="Tip" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0>Service
+interface is an object used to describe a set of operations that will
+be developed on the service provider system.</P>
+<P><IMG SRC="../images/00028.jpeg" NAME="graphics36" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.5: Header area of PPO detailed screen</P>
+<P><B>Order area</B>&mdash;the order area contains more detailed
+information on the status of the processed message and consists of
+several tabs. The main difference between the header area and the
+order area is that the second one can be fully customized by adding
+new tabs, changing their order, and hiding some of the tabs. Figure
+3.6 shows a set of standard tabs used in the order details screen.</P>
+<P><IMG SRC="../images/00029.jpeg" NAME="graphics37" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.6: Order area of PPO detailed screen</P>
+<P><B>Object area</B>&mdash;the objects area provides information,
+not only about the values used in the message, but can also link them
+to other objects in the SAP system. As with the order detail area,
+the object area can also be customized, but in this case on two
+levels:</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm">Tab area&mdash;In this area, you
+	can add or hide new tabs. 
+	</P>
+	<LI><P>Processing methods&mdash;In this area, you can link different
+	objects to the message fields and navigate to them directly from the
+	PPO screens. 
+	</P>
+</UL>
+<P>Figure 3.7 displays the object area of one of the messages. There
+are two tabs: the message data tab and the purchasing contract tab.
+The message data tab is linked to the content of the XML message and
+we can either display or change its values. We also see a second tab,
+which for this particular enterprise service is a link to the
+Purchasing Contract. This means that we can immediately navigate to
+transactions or master data from the PPO screen which makes it very
+easy to investigate errors.</P>
+<P><IMG SRC="../images/00030.jpeg" NAME="graphics38" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.7: Object area of PPO detailed screen</P>
+<P><B>Log area</B>&mdash;The log area contains all of the messages
+generated by the system during processing of the SOA Integration
+scenario. We can filter out types of messages by clicking on their
+symbols (stop, error, warning, success, etc.) or double-clicking on
+the message to view more details. If we want to change the size of
+the window, we can use expand log icon to increase the log area to
+the full screen size. It&rsquo;s also possible to create hints for
+solving errors which can be linked to the messages in the log and
+they can also be displayed in the log area. Figure 3.8 shows filtered
+error messages with hints available in the PPO Hint column.</P>
+<P><IMG SRC="../images/00031.jpeg" NAME="graphics39" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.8: Log area of PPO detailed screen</P>
+<H3 CLASS="western">3.3.2&nbsp;&nbsp;&nbsp;Payload Editor in Post
+Processing Office</H3>
+<P>We can open the Payload Editor tool from the Post Processing
+Office by selecting the display processing option from the Message
+Data tab in the Object area.</P>
+<P>Once the Payload Editor is opened, we can see the XML structure of
+the message in the form of hierarchical format. Data from each node
+can be displayed by selecting the appropriate table node as shown in
+Figure 3.9.</P>
+<P><IMG SRC="../images/00032.jpeg" NAME="graphics40" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.9: Payload editor data view</P>
+<P>There are two types of payload:</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm">Pre-mapping payload &ndash;This
+	type of payload occurs when the data from the proxy structure cannot
+	be mapped to the data structure of the calling BAPI. A typical case
+	would be a custom service that inserts data into the custom table. 
+	</P>
+	<LI><P>Post-mapping payload&mdash;This type of payload occurs when
+	the data from the proxy structure can be mapped to the data
+	structure of the calling BAPI. 
+	</P>
+</UL>
+<P>BAPI</P>
+<P><IMG SRC="../images/00004.jpeg" NAME="graphics41" ALT="Tip" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0>A
+Business Application Programming Interface (BAPI) is a precisely
+defined interface providing access to methods of objects in an SAP
+backend application system.</P>
+<P>The data display is much more easily used than the XML display in
+the Local Integration Engine monitor and can be easily used by
+business people. There&rsquo;s a set of additional functions which
+can be done in the Payload editor including:</P>
+<P><B>Searching</B>&mdash;The search button is located above the
+payload details which allows you to search for data in all nodes as
+per Figure 3.10.</P>
+<P><B>Editing</B>&mdash;in some cases it may be necessary to change
+the message data before reprocessing it because it&rsquo;s not
+possible to resend the message from the sender system. In this
+situation, we can use the edit function by clicking on the change
+button. It&rsquo;s possible to add new rows, copy rows, and remove
+rows. It&lsquo;s even possible to use the input help in case the
+message was mapped to an SAP structure as shown in the Figure 2.11.</P>
+<P><IMG SRC="../images/00034.jpeg" NAME="graphics42" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.11: Inserting the data in the Payload Editor</P>
+<P>Changing messaga data</P>
+<P><IMG SRC="../images/00005.gif" NAME="graphics43" ALT="Watchout" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0>In
+many cases it&rsquo;s not allowed to change the message data for
+business related reasons. In such cases, it&rsquo;s possible to
+restrict access by using authorizations.</P>
+<P><B>Versioning</B>&mdash;If it&rsquo;s required to make a lot of
+changes to the data, you can keep track of those changes by creating
+different versions of the message. In order to use this function,
+select the Save as new version button after making a change as shown
+in Figure 3.12.</P>
+<P><IMG SRC="../images/00035.gif" NAME="graphics44" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.12: Saving a new version of a message in Payload Editor</P>
+<P>Keep in mind that the data is not written to the database until
+you save it with the normal save button.</P>
+<P><B>Attachment handling</B>&mdash;When it&rsquo;s necessary to
+document the changes made to the content of the message, it&rsquo;s
+possible to upload any kind of file and attach it in the Payload
+Editor. As it&rsquo;s not very convenient to determine the changes in
+different structures among different message versions, it&rsquo;s a
+good practice to add a text document that sums up all changes made to
+the message content and upload it as an attachment. In order to do
+that, we need to select the attachment button and select the file as
+shown in Figure 3.13.</P>
+<P><IMG SRC="../images/00036.jpeg" NAME="graphics45" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.13: Adding attachments in Payload Editor</P>
+<H3 CLASS="western">3.3.3&nbsp;&nbsp;&nbsp;Hints for error monitoring</H3>
+<P>Whenever SOA interface monitoring is done with the help of Error
+and Conflict Handler, we may encounter a number of different types of
+errors during message processing. Some of them may not happen very
+often, others may be more frequent, but in all cases it&rsquo;s
+always a good practice to document how the issue was solved. Error
+and Conflict Handler provides the opportunity to assign hints to each
+error type where we can describe how the error was solved. In the log
+area of the detailed Error and Conflict Handler screen we can find
+all messages and for each of those we can assign a hint as shown in
+Figure 3.14.</P>
+<P><IMG SRC="../images/00037.jpeg" NAME="graphics46" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.14: Hint creation</P>
+<P>Next, we need to populate the hint&lsquo;s information area as
+shown in Figure 3.15 with the pertinent information that can be used
+to help to solve the issue next time.</P>
+<P><BR><BR>
+</P>
+<P><BR><BR>
+</P>
+<P><IMG SRC="../images/00038.jpeg" NAME="graphics47" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.15: Hint&lsquo;s information population</P>
+<P>Once we save the hint it will always be shown on all of the
+messages with this particular error.</P>
+<P><BR><BR>
+</P>
+<P><BR><BR>
+</P>
+<H2 CLASS="western"><A NAME="sigil_toc_id_11"></A>3.4&nbsp;&nbsp;&nbsp;Message
+reprocessing</H2>
+<P>Every message that ends up in Post Processing Office of Error and
+Conflict Handler has an error. Therefore, it has to be investigated
+and its status needs to be changed before the message can be archived
+(messages with their last status as an error cannot be archived).
+There are three types of actions that a user can perform on each
+message as shown in Figure 3.16:</P>
+<P><IMG SRC="../images/00039.gif" NAME="graphics48" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.16: Options for error solving</P>
+<P><B>Repeat</B>&mdash;if we select this option the system will try
+to restart the message processing. We can use this option in a few
+cases:</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm">If a message&rsquo;s content was
+	changed in Post Processing Office and new or updated values should
+	allow posting the message (for example, if the sales order message
+	had a wrong material number and the material number field was
+	updated in ECH&lsquo;s message editor). 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm">If customizing was corrected in a
+	situation where it was not done in a correctly (for example, when
+	posting a sales order with a new sales order type which was not yet
+	transported to the production system). 
+	</P>
+	<LI><P>If an error was only temporary and should not happen anymore
+	(for example, when posting a material master change on a material
+	which is being edited by someone else at the same moment). 
+	</P>
+</UL>
+<P><B>Confirm</B>&mdash;this options works in two different ways
+depending on if the SOA integration scenario requires a confirmation
+or not. If the confirmation for asynchronous scenario is possible
+using this option, we can inform the sender application that the
+error was confirmed and no further processing is needed. If the
+confirmation is not required, then this option will only cancel the
+error and no further processing is required. Figure 3.17 shows the
+new entry in the log area of the detailed Error and Conflict Handler
+screen after using confirm option.</P>
+<P><IMG SRC="../images/00040.jpeg" NAME="graphics49" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.17: Confirm option information</P>
+<P><B>Discard</B>&mdash;this option also works in two different ways
+depending on if the SOA integration scenario requires a confirmation
+or not. If confirmation for asynchronous scenario is possible using
+this option, we can inform the sender application about the error by
+sending the error information. If the confirmation is not required,
+this option will cancel the error and no further processing is
+required. Figure 3.18 shows the new entry in the log area of the
+detailed Error and Conflict Handler screen after using confirm
+option.</P>
+<P><IMG SRC="../images/00041.jpeg" NAME="graphics50" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.18: Discard option information</P>
+<H3 CLASS="western">3.4.1&nbsp;&nbsp;&nbsp;Custom specific error
+processing options</H3>
+<P>In the event that you are not using SAP standard enterprise
+services for posting SOA integration scenarios, but a custom build
+enterprise services, we can freely assign any kind of actions to the
+three processing options using custom ABAP coding. This can be very
+useful if different types of IT service management solutions are used
+like ITIL. In such cases, each of the options can send a message to
+the IT service processing tool informing it of the action taken.</P>
+<H3 CLASS="western">3.4.2&nbsp;&nbsp;&nbsp;Automated error resolution</H3>
+<P>Apart from manual error resolution available from the
+Postprocessing Office detailed screen, it&rsquo;s also possible to
+define automated restarting for some specific SOA integration
+scenarios. Imagine we are posting material master changes and the
+transaction is locked as another process is doing the same thing at
+the same moment. In this situation, it&rsquo;s best to assign errors
+to the automated restarting process of Error and Conflict Handler
+which is based on Hierarchical Derivation Service. We can call the
+resolution strategy customizing directly from transaction
+ech_resol_comp and on the first screen, select the ECH component.
+Depending on which enterprise service we want to use, they can be
+based on different components. However, for the purpose of the
+explanation we can select the purchasing component as shown in Figure
+3.19.</P>
+<P><IMG SRC="../images/00042.jpeg" NAME="graphics51" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.19: Resolution strategy component selection</P>
+<P>On the next screen, you can select the condition that specifies
+when the resolution strategy should take place. The most common
+condition field is error category, but you can also select some other
+categories (like process name). In the next step, you need to define
+the mode of resolution strategy and we have two modes available:</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm">Persistent mode&mdash;In
+	persistent mode, the system immediately creates the Postprocessing
+	Office Order (with error message) after the first try of processing
+	of the message. 
+	</P>
+	<LI><P>Transient mode&mdash;In transient mode, the system will first
+	try to solve the error automatically without creating the
+	Postprocessing Office Order (with an error message). 
+	</P>
+</UL>
+<P>You can combine modes and that would mean that the message
+resolution strategy will at first try to use the transient mode to
+solve it and if this is not possible, then it will use the persistent
+mode to create the Postprocessing Office Order. Below you can see the
+description of the fields for both modes and the actual
+implementation in Figure 3.20:</P>
+<P><BR><BR>
+</P>
+<P><BR><BR>
+</P>
+<P><IMG SRC="../images/00043.jpeg" NAME="graphics52" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.20: Resolution Strategy implementation</P>
+<P>Transient mode:</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm">Retry&mdash;number of retries. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm">Time interval&mdash;time between
+	the retries (should not be very long). 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm">Unit for internal&mdash;unit of
+	measurement for time interval (minutes or hours). 
+	</P>
+	<LI><P>Rollover&mdash;time difference between the retries (linear or
+	exponential). 
+	</P>
+</UL>
+<P>Persistent mode:</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm">Resubmission group&mdash;period in
+	which the system executes automated retries. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm">Retry mode&mdash;determines if
+	users are allowed to execute the repeat option manually, or only in
+	the automated mode. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm">Confirm mode&mdash;similar to the
+	retry mode, determines if users are allowed to execute the confirm
+	option manually, or only in the automated mode. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm">Discard mode&mdash;similar to the
+	retry mode, determines if users are allowed to execute the discard
+	option manually or only in the automated mode. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm">Residence time&mdash;defined as
+	the interval during which it&rsquo;s possible to use the repeat
+	button in the manual mode. After that time, it&rsquo;s only possible
+	to use the confirm and the discard options. 
+	</P>
+	<LI><P>Unit&mdash;residence time&mdash;unit of measurement residence
+	time. 
+	</P>
+</UL>
+<P>After setting up the Resolution Strategy, make sure that it&rsquo;s
+saved and activated and you can use it to manage Postprocessing
+Office errors in automated mode which can simplify the monitoring of
+a SOA integration scenarios.</P>
+<P><BR><BR>
+</P>
+<P><BR><BR>
+</P>
+<H2 CLASS="western"><A NAME="c3.5"></A>.5&nbsp;&nbsp;&nbsp;Content-based
+message search</H2>
+<P>In most cases, it&rsquo;s not enough to be able to select messages
+on the basis of the SOA integration scenario header information only
+(interface name/namespace, sender/receiver system name, etc.). The
+Error and Conflict Hander, just like Local Integration Engine
+Monitor, allows you to specify which fields of the message payload
+are searchable on the entry screen of the main ECH transaction. In
+order to be able to use fields from the message for searching, first
+we need to define the set of fields we want to use for searching.
+Next, we will define those fields as payload attributes in
+customizing using the menu path SPRO &bull; Cross-Application
+Components &bull; Processes and Tools for Enterprise Applications &bull;
+Enterprise Services &bull; Error and Conflict Handler &bull; Define
+Payload Attributes. In this example, we will make one field, company
+code, searchable. As per Figure 3.21 we need to define:</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm">Payload Characteristic&mdash;this
+	is freely definable ID of the payload field. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm">Attribute&rsquo;s Description&mdash;In
+	this field, we can define the field description, which will be later
+	visible in the monitoring transaction so you need to make sure the
+	description is clear for all end users. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm">Structure Name&mdash;If we want to
+	be able to use F4 help we need to make sure that we link the payload
+	attribute to the structure that holds the field on the basis of
+	which we want to create the search help. 
+	</P>
+	<LI><P>Field Name&mdash;Similarly to the structure name, we also
+	need to specify the field that will be used for search help. 
+	</P>
+</UL>
+<P><IMG SRC="../images/00044.gif" NAME="graphics53" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.21: Adding a payload attribute</P>
+<P>Once the payload attribute is set we need to define payload
+specific settings in SPRO &bull; Cross-Application Components &bull;
+Processes and Tools for Enterprise Applications &bull; Enterprise
+Services &bull; Error and Conflict Handler &bull; Define Payload
+Specific Settings. Payload specific settings are the link between the
+payload attribute and actual field from the message. In the initial
+screen of define payload specific settings we need to select a few
+values like business process, component, payload type and DDIC object
+which can be taken from the Additional Data section of the Order
+details screen of ECH monitoring transaction and from the Message
+Data display section of the same transaction. In this example, we
+will add payload specific settings to the SAP standard enterprise
+service InvoiceERPRequest_In. That&rsquo;s why we need to define the
+values as shown in Figure 3.22.</P>
+<P><IMG SRC="../images/00045.jpeg" NAME="graphics54" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.22: Defining payload specific settings</P>
+<P>On the next screen, we need to add the new attribute and select
+the one defined in payload attributes customizing section and drag
+and drop the field name from the left hand side of the screen to
+extraction path of the attribute as shown in Figure 3.23.</P>
+<P><IMG SRC="../images/00046.jpeg" NAME="graphics55" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.23: Assigning a message field to the payload attribute</P>
+<P>Once a new message is processed, we can select the appropriate
+payload attribute in the payload characteristic field of the initial
+screen of ECH monitoring transaction. If the attribute was defined
+with F4 search help correctly, then we can use the search help to
+populate the extracted value section as shown in Figure 3.24.</P>
+<P><IMG SRC="../images/00047.jpeg" NAME="graphics56" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.24: Selecting the values for Payload Attributes</P>
+<P>If the search was successful, then we will only see messages that
+have values specified in the entry screen and we can also see all
+payload attributes in the Payload Attributes section of the Message
+Data part of the detailed screen as in Figure 3.25.</P>
+<P><IMG SRC="../images/00048.jpeg" NAME="graphics57" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.25: Payload attributes in the detailed ECH monitoring
+screen</P>
+<P><BR><BR>
+</P>
+<P><BR><BR>
+</P>
+<H2 CLASS="western"><A NAME="sigil_toc_id_12"></A>3.6&nbsp;&nbsp;&nbsp;Worklists</H2>
+<P>In many companies different error types may need to be solved by
+different groups of users. To facilitate this process, Post
+Processing Office provides the option of creating worklists that
+assign users to different components that are always assigned to
+specific enterprise services. In this manner, every user can
+immediately display only those errors which he or she can solve. In
+order to create a new worklist, we need to open customizing SPRO &bull;
+Cross-Application Components &bull; Processes and Tools for
+Enterprise Applications &bull; Enterprise Services &bull; Error and
+Conflict Handler &bull; Postprocessing Office &bull; Worklist &bull;
+Define Worklists. We need to select the component and worklist&rsquo;s
+name as shown in Figure 3.26.</P>
+<P><IMG SRC="../images/00049.gif" NAME="graphics58" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.26: Worklist creation</P>
+<P>It&rsquo;s also possible to define the worklist as a standard
+worklist (see standard worklist checkbox in Figure 3.26). Doing so
+means that if the system cannot find any other worklist assigned to
+the Postprocessing Order message, then the standard list would be
+assigned. It&rsquo;s also possible to assign the worklist to an Error
+and Conflict Handler Business Process to even further subdivide
+different worklists, but it&rsquo;s not a mandatory configuration and
+we won&rsquo;t go into further detail on the topic here. Once the
+worklist is created, we can assign users to them in transaction
+/SAPPO/WL_CHANGE. On the right hand side of the transaction, we need
+to select the user name and drag and drop it into the worklist name
+which is visible on the left hand part of the screen as shown in
+Figure 3.27.</P>
+<P><IMG SRC="../images/00050.gif" NAME="graphics59" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.27: Assigning users to the worklist</P>
+<P>If the assignment is done and new messages were created in the
+Postprocessing Office, we can open ECH monitoring transaction
+ECH_MONI_SEL. In the technical settings section, there is a field
+called Order Assignment, which by default is populated with value
+Orders in my Worklist as per Figure 3.28. After we run the selection,
+only messages assigned to the worklist should be displayed, which in
+many cases can eliminate entering any other filtering criteria by the
+responsible user.</P>
+<P><IMG SRC="../images/00051.jpeg" NAME="graphics60" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.28: Order assignment in the ECH monitoring transaction</P>
+<P><BR><BR>
+</P>
+<P><BR><BR>
+</P>
+<P><BR><BR>
+</P>
+<H2 CLASS="western"><A NAME="sigil_toc_id_13"></A>3.7&nbsp;&nbsp;&nbsp;Object
+linking</H2>
+<P>Some fields of the inbound messages can contain data which exists
+in target system. A typical example of those values are master data
+values like material numbers, customer/vendor numbers, or
+transactional data like contract numbers. Sometimes users that
+monitor messages in Error and Conflict Handler would like to be able
+to navigate directly from the message monitoring transaction to the
+object display transactions of the SAP backend application system
+without needing to open new transactions in new sessions. Error and
+Conflict Hander provides the option of assigning message values to
+different transactions which can be opened directly from the ECH
+monitoring screen. In the following example, we will display the
+object Company Code from the monitoring screen. In order to do that,
+we need to define payload specific settings in the customizing SPRO &bull;
+Cross-Application Components &bull; Processes and Tools for
+Enterprise Applications &bull; Enterprise Services &bull; Error and
+Conflict Handler &bull; Define Payload Specific Settings in a similar
+way as described in <A HREF="javascript:void(0)">section 3.5</A> on
+content-based message search. Next, we will open the Related Object
+section and select the Object Type which for Company Code is BUS0002.
+Once the object is selected we need to select the Key fields button
+and the key fields section will appear. Drag and drop to select the
+message&rsquo;s fields on the left hand side of the screen and assign
+them to the extraction path fields of the key fields section as shown
+in Figure 3.29.</P>
+<P><IMG SRC="../images/00052.jpeg" NAME="graphics61" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.29: Assigning message values to the related objects</P>
+<P>Once the assignment is complete, every new message in the
+monitoring screen should contain an additional tab in the Order
+Details section as shown in Figure 3.30.</P>
+<P><IMG SRC="../images/00053.jpeg" NAME="graphics62" ALT="SOA Integration &mdash; Enterprise Service Monitoring" ALIGN=BOTTOM WIDTH=75 HEIGHT=38 BORDER=0></P>
+<P>Figure 3.30: Related object display in the ECH monitoring screen</P>
+<P>This new tab contains all methods which are available for the
+business object in standard, so in most cases we would be able to
+have a display method that allows navigating to the object from the
+ECH monitoring screen.</P>
+<P><BR><BR>
+</P>
+<P><BR><BR>
+</P>
+<P><BR><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+</BODY>
+</HTML>
