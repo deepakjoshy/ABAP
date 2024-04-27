@@ -16,3 +16,5 @@
 - [Extract and Download Excel File in Fiori/Ui5 from Backend/Gateway](Excel%20Operations/Download%20Excel%20File%20from%20Backend\Gateway%20in%20Ui5\Fiori.md)
 
 - [ABAP COMMIT/ROLLBACK Event]( https://github.com/deepakjoshy/ABAP/tree/main/Commit%20Work%20Events#readme )
+
+- [gCTS Quick Setup Guide](https://github.com/deepakjoshy/ABAP/blob/b6c38fc830866b31be4a593e76e92c55503ab14a/gCTS/gCTS%20Setup%20-%20Playbook.pdf)
