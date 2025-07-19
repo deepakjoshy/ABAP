@@ -175,5 +175,5 @@ INDICATORS NULL STRUCTURE null_indicator.
 DATA(lv_records) = lines( VALUE tt_spfli( FOR line IN lt_spfli WHERE ( carrid EQ 'LH' ) ( line ) ) ).
 
 * Distinguish whether the call originates from the UI or the API - returns the C/I View name
-𝗰𝗹_𝗮𝗯𝗮𝗽_𝗯𝗲𝗵𝘃_𝗮𝘂𝘅=>𝗴𝗲𝘁_𝗰𝘂𝗿𝗿𝗲𝗻𝘁_𝗰𝗼𝗻𝘁𝗲𝘅𝘁( 𝗜𝗠𝗣𝗢𝗥𝗧𝗜𝗡𝗚 𝗳𝗿𝗼𝗺_𝗽𝗿𝗼𝗷𝗲𝗰𝘁𝗶𝗼𝗻 = 𝗗𝗔𝗧𝗔(𝗹𝘃_𝗽𝗿𝗼𝗷) ). 
+cl_abap_behv_aux=>get_current_context(IMPORTING from_projection = DATA(lv_view_name)).
 
