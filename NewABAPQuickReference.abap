@@ -177,3 +177,57 @@ DATA(lv_records) = lines( VALUE tt_spfli( FOR line IN lt_spfli WHERE ( carrid EQ
 * Distinguish whether the call originates from the UI or the API - returns the C/I View name
 cl_abap_behv_aux=>get_current_context(IMPORTING from_projection = DATA(lv_view_name)).
 
+
+* LOOP AT ... GROUP BY - 1) Representative Binding + Member Loop
+* Runs in two phases: phase 1 builds the groups silently, phase 2 loops the groups.
+* With no INTO after GROUP BY, the work area holds the FIRST line of each group (its
+* "representative") and is also the name that binds the group for LOOP AT GROUP.
+LOOP AT lt_spfli INTO DATA(ls_rep)
+     GROUP BY ( carrid = ls_rep-carrid airpfrom = ls_rep-airpfrom ).
+  WRITE: / ls_rep-carrid, ls_rep-airpfrom.
+  LOOP AT GROUP ls_rep INTO DATA(ls_member).
+    WRITE: / '   ', ls_member-connid, ls_member-distance.
+  ENDLOOP.
+ENDLOOP.
+
+
+* LOOP AT ... GROUP BY - 2) Group Key Binding with GROUP SIZE / GROUP INDEX
+* GROUP SIZE (member count) and GROUP INDEX (1,2,3... in group creation order) are
+* extra components of the key structure - they are NOT part of the key itself, and
+* they are only allowed with an explicit INTO target, never with representative binding.
+LOOP AT lt_spfli INTO DATA(ls_line)
+     GROUP BY ( carrid = ls_line-carrid
+                indx   = GROUP INDEX
+                size   = GROUP SIZE )
+     INTO DATA(ls_key).
+  WRITE: / ls_key-indx, ls_key-carrid, ls_key-size.
+* Aggregate over the members without a nested LOOP - FOR ... IN GROUP takes the group name
+  DATA(lv_total_dist) = REDUCE i( INIT s = 0 FOR m IN GROUP ls_key NEXT s = s + m-distance ).
+  WRITE: lv_total_dist.
+ENDLOOP.
+
+
+* LOOP AT ... GROUP BY - 3) WITHOUT MEMBERS (distinct-values / performance variant)
+* Skips building the member assignment entirely. Use it when you only need the keys.
+* Trade-off: no LOOP AT GROUP / FOR ... IN GROUP is possible, but it is the ONLY form
+* in which the source table itself may be modified inside the group loop.
+LOOP AT lt_spfli INTO DATA(ls_any)
+     GROUP BY ls_any-carrid WITHOUT MEMBERS
+     INTO DATA(lv_carrid).
+  WRITE: / lv_carrid.
+ENDLOOP.
+
+
+* LOOP AT ... GROUP BY - Gotchas worth remembering
+* - Group order = order in which each key FIRST appears; add ASCENDING / DESCENDING
+*   [AS TEXT] after the key expression to force sorted group order instead.
+* - Unlike AT NEW / AT END OF, GROUP BY does NOT require the table to be pre-sorted
+*   and does not depend on the field order of the line type. AT group-level statements
+*   are in fact forbidden inside a GROUP BY loop.
+* - The source table cannot be modified inside the group loop unless WITHOUT MEMBERS.
+* - LOOP AT GROUP only works when the table is written as a real data object; if the
+*   source is the result of a method call or expression, only the keys survive phase 1.
+* - TRANSPORTING NO FIELDS is not allowed with GROUP BY.
+* - sy-tabix differs by binding: representative binding gives the tabix of the
+*   representative line, group key binding counts the groups (1, 2, 3, ...).
+* Ref: https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abaploop_at_itab_group_by.html
