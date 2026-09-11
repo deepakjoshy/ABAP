@@ -75,3 +75,42 @@ Sample Code:
     DATA(lo_set) = /bobf/cl_bunit_node_set=>create_with_node( lo_itmcndnscales ).  
     DATA(lo_determination_result_c) = lo_set->execute_determination( sc_determination-i_cntrlpurcontritmcndnscalestp-check_and_enrich_itmcnd_scales ).  
     mo_assert->determination_result( lo_determination_result_c )->has_no_failed_keys( ).
+
+
+
+### Mocking Class/Interface Dependencies — ABAP Test Double Framework
+
+The mocking snippets above cover database and BOPF dependencies. For a dependency that is a **global class or interface**, use the ABAP OO Test Double Framework (`CL_ABAP_TESTDOUBLE`, SAP_BASIS 7.40 SP9+) instead of hand-writing a stub class.
+
+Full worked example (interface, class under test, and local test class): [ZCL_TestDoubleFramework_Demo.abap](ZCL_TestDoubleFramework_Demo.abap)
+
+The mental model that trips people up: `configure_call( )` arms the double for the **next** method call you write on it. That next call is a *recording* — its input values become the matcher — not a real invocation.
+
+Sample Code
+
+    "1. create the double from the interface NAME (string) -> needs a cast
+    mo_double ?= cl_abap_testdouble=>create( 'ZIF_CURRENCY_CONVERTER' ).
+
+    "2. arm it: return 80 for these exact inputs, for the next 2 calls
+    cl_abap_testdouble=>configure_call( mo_double )->returning( 80 )->times( 2 ).
+
+    "3. the recording call - defines WHICH inputs the config above matches
+    mo_double->convert( amount          = 100
+                        source_currency = `USD`
+                        target_currency = `EUR` ).
+
+    "4. inject and test
+    DATA(lo_cut) = NEW zcl_expense_manager( mo_double ).
+    cl_abap_unit_assert=>assert_equals( exp = 160 act = lo_cut->total_in( `EUR` ) ).
+
+Chain onto `configure_call( )`: `returning( )`, `set_parameter( )` (EXPORTING/CHANGING, one call per parameter), `ignore_parameter( )`, `ignore_all_parameters( )`, `raise_exception( )` (class-based only), `raise_event( )`, `times( )`, `and_expect( )->is_called_times( )`, `set_matcher( )`, `set_answer( )`.
+
+`times( )` defaults to 1, and once a configuration is exhausted the **last matching** configuration keeps being returned — extra calls do not fail or return initial values.
+
+#### Limitations
+
+`CL_ABAP_TESTDOUBLE` cannot double a local class/interface, or a class declared `FINAL`, `CREATE PRIVATE`, `FOR TESTING`, or one whose constructor has mandatory parameters. Check this before designing around it.
+
+For other dependency kinds: `CL_OSQL_TEST_ENVIRONMENT` (DB tables/CDS view entities in ABAP SQL), `CL_CDS_TEST_ENVIRONMENT` (logic inside CDS entities), `CL_BOTD_TXBUFDBL_BO_TEST_ENV` / `CL_BOTD_MOCKEMLAPI_BO_TEST_ENV` (RAP business objects).
+
+References: [SAP Help — ABAP OO Test Double Framework](https://help.sap.com/docs/abap-cloud/abap-development-tools-user-guide/abap-oo-test-double-framework) · [SAP ABAP Cheat Sheets — ABAP Unit Tests](https://github.com/SAP-samples/abap-cheat-sheets/blob/main/14_ABAP_Unit_Tests.md)
