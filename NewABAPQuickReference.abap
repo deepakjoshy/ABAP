@@ -231,3 +231,64 @@ ENDLOOP.
 * - sy-tabix differs by binding: representative binding gives the tabix of the
 *   representative line, group key binding counts the groups (1, 2, 3, ...).
 * Ref: https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abaploop_at_itab_group_by.html
+
+
+* String Templates - 1) ALPHA = IN / OUT (the leading-zero conversion, without the FM)
+* Same thing CONVERSION_EXIT_ALPHA_INPUT / _OUTPUT does, inline and without a FM call.
+* IN  = pad left with zeros (display value -> internal/DB value)
+* OUT = strip leading zeros (internal/DB value -> display value)
+* Only allowed on string / c / n, and the ONLY options that may be combined with it
+* are WIDTH and CASE - anything else is a syntax error.
+DATA(lv_matnr_db)   = |{ '1234' ALPHA = IN WIDTH = 18 }|.   " '000000000000001234'
+DATA(lv_matnr_disp) = |{ lv_matnr_db ALPHA = OUT }|.        " '1234'
+
+* GOTCHA: without WIDTH the result length comes from the SOURCE, not the target -
+* so the pad is silently a no-op. These two are NOT the same:
+DATA lv_c18 TYPE c LENGTH 18.
+lv_c18 = |{ '1234' ALPHA = IN }|.               " 000000000000001234 - target length 18 is used
+DATA(lv_str) = |{ '1234' ALPHA = IN }|.         " '1234' - source length 4 is used, no padding!
+* The target-length rule applies only when the template is a SINGLE embedded expression
+* holding a SINGLE data object, assigned to a fixed-length c/n/d/t field. Wrap it in a
+* function call or add any literal text and you fall back to the source length.
+
+
+* String Templates - 2) WIDTH / ALIGN / PAD (column output without OFFSET+LENGTH juggling)
+* ALIGN and PAD do nothing unless WIDTH is also given and is LARGER than the value.
+* WIDTH can only grow a value, never truncate it - a too-small WIDTH is ignored.
+WRITE: / |{ 'Carrier' WIDTH = 12 }{ 'Distance' WIDTH = 10 ALIGN = RIGHT }|.
+WRITE: / |{ 'LH' WIDTH = 12 PAD = '.' }{ 6162 WIDTH = 10 ALIGN = RIGHT }|.
+* Keywords have CL_ABAP_FORMAT equivalents for the dynamic (dobj) form:
+* ALIGN -> A_LEFT / A_RIGHT / A_CENTER, CASE -> C_RAW / C_UPPER / C_LOWER,
+* ALPHA -> L_IN / L_OUT / L_RAW. Needed when the option is decided at runtime:
+DATA(lv_align) = CL_ABAP_FORMAT=>A_RIGHT.
+WRITE: / |{ 'X' WIDTH = 10 ALIGN = (lv_align) PAD = '_' }|.   " '_________X'
+
+
+* String Templates - 3) Dates, times and numbers
+* DATE only on type d, TIME only on type t. Default for both is RAW (yyyymmdd) -
+* which is why a bare |{ sy-datum }| prints the unreadable internal form.
+WRITE: / |{ sy-datum DATE = ISO }|,      " 2026-09-12  (always yyyy-mm-dd)
+         |{ sy-datum DATE = USER }|,     " per the user master record
+         |{ sy-uzeit TIME = ISO }|.      " hh:mm:ss
+* NUMBER / DATE / TIME / TIMESTAMP and COUNTRY are MUTUALLY EXCLUSIVE - pick one.
+* COUNTRY formats per T005X for this expression only, with none of the session-wide
+* side effects of SET COUNTRY:
+WRITE: / |{ 1000000 COUNTRY = 'DE ' }|.  " uses the DE mask from T005X
+* ZERO = NO renders a zero as an empty string - handy for ALV/report columns:
+WRITE: / |{ 0 ZERO = NO }|, |{ 0 ZERO = YES }|.   " '' and '0'
+
+
+* String Templates - 4) DECIMALS vs CURRENCY (the amount-formatting trap)
+* DECIMALS rounds to the given number of places, regardless of the type's own decimals.
+WRITE: / |{ CONV decfloat34( '1234.5678' ) DECIMALS = 2 }|.   " 1234.57
+* CURRENCY takes the decimal count from TCURX (default 2) - the point being currencies
+* like JPY (0 places) or KWD (3 places) format correctly without hardcoding.
+* THE TRAP: when a type p DATA OBJECT is passed, its declared decimal places are
+* IGNORED COMPLETELY and the separator is simply inserted at the position TCURX says.
+* Pass an arithmetic expression instead and CURRENCY behaves like DECIMALS.
+DATA lv_amount TYPE p LENGTH 8 DECIMALS 2 VALUE '12345.67'.
+WRITE: / |{ lv_amount CURRENCY = 'EUR' }|,       " digits re-split - NOT 12345.67
+         |{ lv_amount * 1 CURRENCY = 'EUR' }|.   " forces the DECIMALS-style behaviour
+* CURRENCY cannot be combined with DECIMALS, STYLE, TIMESTAMP or TIMEZONE.
+* Note: no thousands separator is ever inserted by CURRENCY - use NUMBER/COUNTRY for that.
+* Ref: https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/ABAPCOMPUTE_STRING_FORMAT_OPTIONS.html
