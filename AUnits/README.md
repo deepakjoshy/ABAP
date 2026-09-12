@@ -114,3 +114,65 @@ Chain onto `configure_call( )`: `returning( )`, `set_parameter( )` (EXPORTING/CH
 For other dependency kinds: `CL_OSQL_TEST_ENVIRONMENT` (DB tables/CDS view entities in ABAP SQL), `CL_CDS_TEST_ENVIRONMENT` (logic inside CDS entities), `CL_BOTD_TXBUFDBL_BO_TEST_ENV` / `CL_BOTD_MOCKEMLAPI_BO_TEST_ENV` (RAP business objects).
 
 References: [SAP Help — ABAP OO Test Double Framework](https://help.sap.com/docs/abap-cloud/abap-development-tools-user-guide/abap-oo-test-double-framework) · [SAP ABAP Cheat Sheets — ABAP Unit Tests](https://github.com/SAP-samples/abap-cheat-sheets/blob/main/14_ABAP_Unit_Tests.md)
+
+
+### Testing Logic Inside a CDS Entity — CDS Test Double Framework
+
+The frameworks above replace a *dependency* of your ABAP code. When the thing you actually want to test is the logic **inside a CDS entity** — a join, a `CASE`, an aggregation — use the CDS Test Double Framework (`CL_CDS_TEST_ENVIRONMENT`, SAP NetWeaver 7.51+).
+
+It doubles the entity's data sources, lets the real CDS engine evaluate the entity against your rows, and you assert on what comes back.
+
+Full worked example (CDS entity, reader class, test class): [ZCL_CDSTestDouble_Demo.abap](ZCL_CDSTestDouble_Demo.abap)
+
+**Which framework?**
+
+| You want to test | Use |
+|---|---|
+| Logic *inside* a CDS entity | `CL_CDS_TEST_ENVIRONMENT` — doubles its data sources |
+| ABAP code that `SELECT`s *from* a CDS entity | `CL_OSQL_TEST_ENVIRONMENT` — double the view itself via `i_dependency_list` |
+
+Sample Code
+
+    CLASS-DATA environment TYPE REF TO if_cds_test_environment.   "interface type, not the class
+
+    METHOD class_setup.
+      "expensive - build once per class. No dependency list needed: the framework
+      "derives the entity's first-level data sources and doubles them itself.
+      environment = cl_cds_test_environment=>create( i_for_entity = 'Z_CARRIER_REGION' ).
+    ENDMETHOD.
+
+    METHOD setup.
+      environment->clear_doubles( ).      "doubles are not emptied between tests
+    ENDMETHOD.
+
+    METHOD class_teardown.
+      environment->destroy( ).
+    ENDMETHOD.
+
+    METHOD eur_maps_to_eu.
+      DATA lt_scarr TYPE STANDARD TABLE OF scarr.
+      lt_scarr = VALUE #( ( mandt = sy-mandt carrid = 'LH' carrname = 'Lufthansa' currcode = 'EUR' ) ).
+
+      environment->insert_test_data( lt_scarr ).   "seed the DATA SOURCE...
+
+      SELECT carrid, region FROM z_carrier_region INTO TABLE @DATA(lt_rows).  "...assert on the ENTITY
+
+      cl_abap_unit_assert=>assert_equals( exp = 'EU' act = lt_rows[ 1 ]-region ).
+    ENDMETHOD.
+
+#### The trap: redirection is off by default
+
+The entity under test always reads the doubles. But a **direct** `SELECT` in your test code against a doubled table hits the *real* database — the opposite of `CL_OSQL_TEST_ENVIRONMENT`, which redirects such selects by default. Call `enable_double_redirection( )` to flip it on, and reset it in `setup` so the state cannot leak between tests.
+
+Practical rule: assert against the CDS entity, never against the seeded tables.
+
+#### Other gotchas
+
+- `class_setup` / `class_teardown` must be `CLASS-METHODS`. Declared as instance `METHODS` they silently never run as fixtures.
+- Fill `MANDT`/`CLIENT` with `sy-mandt` in seed rows. Key constraints are not copied to the double, so a wrong client does not error — the view just returns nothing.
+- `i_dependency_list` is for hierarchy testing, **not** unit tests. Supply it and you must cover one node in every dependency path or `create( )` throws.
+- Modeled associations are not runtime data sources and are not doubled unless you pass `test_associations = 'X'`.
+- Tests cannot be launched from the DDL editor — run them from the class holding the test include.
+- `disable_dcl` on `create( )` is obsolete and ignored on current releases; use `get_access_control_double( )`. The default is "no access control".
+
+References: [SAP Help — CDS Unit Tests: Creating the Test Class](https://help.sap.com/docs/abap-cloud/abap-data-models/cds-unit-tests-creating-test-class) · [SAP Help — ABAP CDS Test Double Framework](https://help.sap.com/docs/abap-cloud/abap-development-tools-user-guide/abap-cds-test-double-framework)
