@@ -24,6 +24,7 @@
 - [Window Expressions | OVER( ), Frames & Ranking Functions](https://github.com/deepakjoshy/ABAP/tree/main/Window%20Expressions#readme)
 - [CORRESPONDING Operator | BASE, DEEP, DISCARDING DUPLICATES & Lookup Tables](https://github.com/deepakjoshy/ABAP/tree/main/Corresponding%20Operator#readme)
 - [Control Level Processing | AT NEW/AT END OF, SUM & the ON CHANGE OF Trap](https://github.com/deepakjoshy/ABAP/tree/main/Control%20Level%20Processing#readme)
+- [Field Symbols | Assignment State, CLEAR vs UNASSIGN & Stale READ Traps](https://github.com/deepakjoshy/ABAP/tree/main/Field%20Symbols#readme)
 - [ABAP COMMIT/ROLLBACK Event]( https://github.com/deepakjoshy/ABAP/tree/main/Commit%20Work%20Events#readme )
 - [ABAP Trial to BTP Trial Connection Setup via Cloud Connector](https://github.com/deepakjoshy/ABAP/blob/059b73151c83c7ef9edccbd99c4e01893d52b3b5/ABAPTrial/SAP%20ABAP%20Trial%20to%20BTP%20Trial%20Connection%20Setup%20via%20Cloud%20Connector.pdf)
 - [gCTS Quick Setup Guide](https://github.com/deepakjoshy/ABAP/blob/b6c38fc830866b31be4a593e76e92c55503ab14a/gCTS/gCTS%20Setup%20-%20Playbook.pdf)
