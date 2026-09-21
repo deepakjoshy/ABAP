@@ -50,6 +50,7 @@
 - [Sorting & Deduplication | Unstable SORT, the sy-subrc = 4 That Means Nothing & ADJACENT](https://github.com/deepakjoshy/ABAP/tree/main/Sorting%20and%20Deduplication#readme)
 - [Dynamic SQL | Initial Tokens Read Everything and the Header-Line Rule That Flips](https://github.com/deepakjoshy/ABAP/tree/main/Dynamic%20SQL#readme)
 - [Loop Modification | Inserting & Deleting Inside a LOOP Over the Same Table](https://github.com/deepakjoshy/ABAP/tree/main/Loop%20Modification#readme)
+- [Constructors | No Virtual Dispatch, the super-> Split & the Static Constructor That Does Not Run](https://github.com/deepakjoshy/ABAP/tree/main/Constructors#readme)
 - [ABAP COMMIT/ROLLBACK Event]( https://github.com/deepakjoshy/ABAP/tree/main/Commit%20Work%20Events#readme )
 - [ABAP Trial to BTP Trial Connection Setup via Cloud Connector](https://github.com/deepakjoshy/ABAP/blob/059b73151c83c7ef9edccbd99c4e01893d52b3b5/ABAPTrial/SAP%20ABAP%20Trial%20to%20BTP%20Trial%20Connection%20Setup%20via%20Cloud%20Connector.pdf)
 - [gCTS Quick Setup Guide](https://github.com/deepakjoshy/ABAP/blob/b6c38fc830866b31be4a593e76e92c55503ab14a/gCTS/gCTS%20Setup%20-%20Playbook.pdf)
