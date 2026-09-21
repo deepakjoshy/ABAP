@@ -176,3 +176,84 @@ Practical rule: assert against the CDS entity, never against the seeded tables.
 - `disable_dcl` on `create( )` is obsolete and ignored on current releases; use `get_access_control_double( )`. The default is "no access control".
 
 References: [SAP Help — CDS Unit Tests: Creating the Test Class](https://help.sap.com/docs/abap-cloud/abap-data-models/cds-unit-tests-creating-test-class) · [SAP Help — ABAP CDS Test Double Framework](https://help.sap.com/docs/abap-cloud/abap-development-tools-user-guide/abap-cds-test-double-framework)
+
+
+### Test Seams & Injections — Testing Code You Cannot Inject Into
+
+The frameworks above all replace a dependency that the code under test **receives**. When production code reaches out and grabs its dependency itself — a `SELECT` in the middle of a method, a function module call, a file read — there is nothing to hand a double to.
+
+`TEST-SEAM` marks such a statement block so a test class can replace it with `TEST-INJECTION`. If no injection is active, the original code runs, so production behaviour is unchanged.
+
+Full worked example (class pool + test include): [ZCL_TestSeams_Demo.abap](ZCL_TestSeams_Demo.abap)
+
+Sample Code
+
+    "production code (class pool)
+    TEST-SEAM selection.
+      SELECT SINGLE * FROM sflight
+             WHERE carrid = @carrid AND connid = @connid AND fldate = @fldate
+             INTO @wa.
+      subrc = sy-subrc.
+    END-TEST-SEAM.
+
+    "test include - setup or a test method, nowhere else
+    TEST-INJECTION selection.
+      wa-price = 100.
+      subrc    = 0.
+    END-TEST-INJECTION.
+
+#### The scope rule
+
+An injection executes in the scope of the **seam**, not of the test method that contains it. Data objects of the test method are visible at the `TEST-INJECTION` statement but **not inside the injection block** — so `wa-price = lv_expected.` does not compile if `lv_expected` is a variable of the test method. Pass values in through a static attribute of the test class, or use literals.
+
+The reverse is also true and useful: `DATA` declared inside an injection stays alive, visible below its declaration in that injection and in all *following* injections of the test class — never in the test class or in production code. `DATA` is the only declarative statement an injection allows.
+
+#### Other constraints
+
+- **Class pools and function pools only.** Injections must live in a test include, and only those two program types have one. A test seam in an executable report can never be injected.
+- A seam stays replaced until the next injection for it is reached, and **all replacements are cancelled at the end of each individual test** — so a per-test injection belongs in `setup`.
+- An **empty** injection deletes the seam's code; an empty seam is also legal and just takes the injection.
+- Seams cannot be nested, cannot cross a statement-block boundary (but may contain whole closed control structures), cannot appear in a class declaration part or in a test class, and must share a compilation unit with their injections.
+- Seams are a last resort. If the dependency can be passed in, use constructor injection and a double — a seam injected in every test means the production path is never the one being tested.
+
+### Test-Class Properties: The Default That Makes Tests Silently Not Run
+
+    CLASS ltcl_demo DEFINITION FOR TESTING.   "no RISK LEVEL addition
+
+This class defaults to **`RISK LEVEL CRITICAL`**, the most dangerous level:
+
+| Level | Meaning |
+|---|---|
+| `CRITICAL` | test changes system settings or customizing — **the default** |
+| `DANGEROUS` | test changes persistent data |
+| `HARMLESS` | test changes neither |
+
+The docs are blunt: *"Tests whose risk level is higher than specified by administration in transaction `SAUNIT_CLIENT_SETUP` are not executed."* Most systems cap the allowed level well below `CRITICAL`, so a test class written without the addition is **not run** — and it is reported as skipped, not failed, which is exactly the shape of failure nobody investigates. Always write `RISK LEVEL HARMLESS` explicitly.
+
+`DURATION SHORT | MEDIUM | LONG` is the *expected* runtime (a few seconds / about a minute / over a minute), checked against upper limits also held in `SAUNIT_CLIENT_SETUP`. Declare the honest expectation rather than the limit — the limits differ per system, and a test that overruns the limit for its declared `DURATION` can be aborted.
+
+#### QUIT: why the second assert in a failing test never reports
+
+Every `CL_ABAP_UNIT_ASSERT` method takes optional `MSG`, `LEVEL` and `QUIT`.
+
+| `QUIT` | Effect on failure |
+|---|---|
+| `NO` | continue the test method |
+| `METHOD` | abort this test method — **the default** |
+| `CLASS` | abort the whole test class |
+| `PROGRAM` | abort this class and skip every other test class in the program |
+
+Because `METHOD` is the default, a test method with five asserts reports only the **first** failure; fix it, re-run, and the next one appears. For a method validating several independent fields, pass `QUIT = if_aunit_constants=>no` — or better, split it into separate test methods. `LEVEL` is `TOLERABLE | CRITICAL (default) | FATAL`.
+
+Two assertion asymmetries: `ASSERT_EQUALS` compares **deeply** (structures and internal tables, nested included) while `ASSERT_DIFFERS` only accepts elementary `SIMPLE` operands — "assert these two tables are equal" works, "assert these two tables differ" does not. Floats need `ASSERT_EQUALS_FLOAT` and its `RTOL` tolerance. And never pass a system field as `ACT`: by the time the parameter is evaluated `sy-subrc` may belong to a different statement — that is what `ASSERT_SUBRC` is for.
+
+#### Test-class facts that are easy to get wrong
+
+- Test-class code is **not generated in production systems** (profile parameter `abap/test_generation`) and is not counted in code coverage.
+- Production code can never address a test class, and a subclass of a test class must itself be `FOR TESTING`. The one exception: a production class may name the test class in `LOCAL FRIENDS` — that is how private components get tested.
+- `setup` / `teardown` / `class_setup` / `class_teardown` are fixture methods, **not** test methods: `FOR TESTING` is not allowed on them.
+- Test methods should be `PRIVATE`. The ABAP Unit driver is an implicit friend of every test class and calls them anyway.
+- `INTERFACES ... PARTIALLY IMPLEMENTED` lets a hand-written double implement only the methods a test actually needs.
+- Production code called from a test must end regularly or via `RETURN` — `LEAVE PROGRAM`, `LEAVE TO TRANSACTION` and `SUBMIT` without `AND RETURN` are not allowed during a unit test.
+
+References: [ABAP Keyword Docs — TEST-SEAM](https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/ABAPTEST-SEAM.html) · [TEST-INJECTION](https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/ABAPTEST-INJECTION.html) · [CLASS, FOR TESTING](https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/ABAPCLASS_FOR_TESTING.html) · [SAP Help — Methods of Class CL_ABAP_UNIT_ASSERT](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/ba879a6e2ea04d9bb94c7ccd7cdac446/49268dc67b6716b4e10000000a42189d.html) · [Customizing ABAP Unit Test Execution](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/ba879a6e2ea04d9bb94c7ccd7cdac446/dcbbcaa38b374362b627b20044c0804a.html)
