@@ -61,6 +61,7 @@
 - [AMDP | The Method That Is Not ABAP, the Buffer It Bypasses & the Exception You Cannot Catch](https://github.com/deepakjoshy/ABAP/tree/main/AMDP#readme)
 - [Enhancement Framework | The Post-Exit That Does Not Run & the Section That Replaces Instead of Appends](https://github.com/deepakjoshy/ABAP/tree/main/Enhancement%20Framework#readme)
 - [Internal Table Memory | Table Sharing, Copy-on-Write & Why CLEAR Frees Nothing](https://github.com/deepakjoshy/ABAP/tree/main/Table%20Memory#readme)
+- [Shared Objects | The Reader You Forgot to Detach & the Commit That Is Not Visible Yet](https://github.com/deepakjoshy/ABAP/tree/main/Shared%20Objects#readme)
 - [ABAP COMMIT/ROLLBACK Event]( https://github.com/deepakjoshy/ABAP/tree/main/Commit%20Work%20Events#readme )
 - [ABAP Trial to BTP Trial Connection Setup via Cloud Connector](https://github.com/deepakjoshy/ABAP/blob/059b73151c83c7ef9edccbd99c4e01893d52b3b5/ABAPTrial/SAP%20ABAP%20Trial%20to%20BTP%20Trial%20Connection%20Setup%20via%20Cloud%20Connector.pdf)
 - [gCTS Quick Setup Guide](https://github.com/deepakjoshy/ABAP/blob/b6c38fc830866b31be4a593e76e92c55503ab14a/gCTS/gCTS%20Setup%20-%20Playbook.pdf)
