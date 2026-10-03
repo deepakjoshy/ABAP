@@ -70,6 +70,7 @@
 - [Screen Modification | The PBO Reset & the name Component That Silences MODIFY SCREEN](https://github.com/deepakjoshy/ABAP/tree/main/Screen%20Modification#readme)
 - [CDS Access Control | The Protection That Stops One Layer Up & the Rules That Can Only Widen](https://github.com/deepakjoshy/ABAP/tree/main/CDS%20Access%20Control#readme)
 - [Row Limiting & Ordering | The UP TO 0 That Reads Everything & the ORDER BY That Sorts Nothing](https://github.com/deepakjoshy/ABAP/tree/main/Row%20Limiting%20and%20Ordering#readme)
+- [ABAP SQL Joins | The WHERE That Cancels Your Outer Join & the Cardinality That Changes the Result](https://github.com/deepakjoshy/ABAP/tree/main/SQL%20Joins#readme)
 - [ABAP COMMIT/ROLLBACK Event]( https://github.com/deepakjoshy/ABAP/tree/main/Commit%20Work%20Events#readme )
 - [ABAP Trial to BTP Trial Connection Setup via Cloud Connector](https://github.com/deepakjoshy/ABAP/blob/059b73151c83c7ef9edccbd99c4e01893d52b3b5/ABAPTrial/SAP%20ABAP%20Trial%20to%20BTP%20Trial%20Connection%20Setup%20via%20Cloud%20Connector.pdf)
 - [gCTS Quick Setup Guide](https://github.com/deepakjoshy/ABAP/blob/b6c38fc830866b31be4a593e76e92c55503ab14a/gCTS/gCTS%20Setup%20-%20Playbook.pdf)
