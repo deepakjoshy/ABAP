@@ -75,6 +75,7 @@
 - [Common Table Expressions | The Unused CTE That Does Not Compile, the Client Column That Stops Being One & the ORDER BY That Is Not Portable](https://github.com/deepakjoshy/ABAP/tree/main/Common%20Table%20Expressions#readme)
 - [Native SQL & ADBC | The LUW That Is Not Yours, the Client Column Nobody Adds & the Truncation on the Wrong End](https://github.com/deepakjoshy/ABAP/tree/main/Native%20SQL#readme)
 - [Exception Texts & Messages | The MESSAGE That Sends Nothing, the Attribute Name That Becomes the Text & the TEXTID You Cannot Combine](https://github.com/deepakjoshy/ABAP/tree/main/Exception%20Texts#readme)
+- [Byte Strings & Code Page Conversion | The Assignment That Looks Like an Encoding and Is Really a Hex Parse](https://github.com/deepakjoshy/ABAP/tree/main/Byte%20Strings#readme)
 - [ABAP COMMIT/ROLLBACK Event]( https://github.com/deepakjoshy/ABAP/tree/main/Commit%20Work%20Events#readme )
 - [ABAP Trial to BTP Trial Connection Setup via Cloud Connector](https://github.com/deepakjoshy/ABAP/blob/059b73151c83c7ef9edccbd99c4e01893d52b3b5/ABAPTrial/SAP%20ABAP%20Trial%20to%20BTP%20Trial%20Connection%20Setup%20via%20Cloud%20Connector.pdf)
 - [gCTS Quick Setup Guide](https://github.com/deepakjoshy/ABAP/blob/b6c38fc830866b31be4a593e76e92c55503ab14a/gCTS/gCTS%20Setup%20-%20Playbook.pdf)
