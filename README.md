@@ -81,6 +81,7 @@
 - [SQL Date & Time Functions | The Empty Date That Becomes 0001-01-01, the Validity Test That Disagrees With Itself & the Failure Mode Chosen by the Column Type](https://github.com/deepakjoshy/ABAP/tree/main/SQL%20Date%20and%20Time%20Functions#readme)
 - [SQL String Functions | The Separator That Survives && and Not CONCAT, the Padding Function That Shortens & the Search Term You Cannot Compute](https://github.com/deepakjoshy/ABAP/tree/main/SQL%20String%20Functions#readme)
 - [ABAP EML | The MODIFY That Changes Nothing, the sy-subrc That Decides Whether You May Carry On & the Update That Is Never Asynchronous](https://github.com/deepakjoshy/ABAP/tree/main/ABAP%20EML#readme)
+- [RAP Determinations & Validations | The Trigger That Never Fires, the Check That Cannot Check Authorization & the Determination That Has No Way to Say No](https://github.com/deepakjoshy/ABAP/tree/main/RAP%20Determinations%20and%20Validations#readme)
 - [ABAP COMMIT/ROLLBACK Event]( https://github.com/deepakjoshy/ABAP/tree/main/Commit%20Work%20Events#readme )
 - [ABAP Trial to BTP Trial Connection Setup via Cloud Connector](https://github.com/deepakjoshy/ABAP/blob/059b73151c83c7ef9edccbd99c4e01893d52b3b5/ABAPTrial/SAP%20ABAP%20Trial%20to%20BTP%20Trial%20Connection%20Setup%20via%20Cloud%20Connector.pdf)
 - [gCTS Quick Setup Guide](https://github.com/deepakjoshy/ABAP/blob/b6c38fc830866b31be4a593e76e92c55503ab14a/gCTS/gCTS%20Setup%20-%20Playbook.pdf)
