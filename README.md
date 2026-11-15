@@ -92,6 +92,7 @@
 - [IDoc & ALE | The IDoc That Was Never Created and Raised Nothing, the COMMIT WORK You Must Write & the One You Must Not, & the Blank Date That Is Not Initial](https://github.com/deepakjoshy/ABAP/tree/main/IDoc%20and%20ALE#readme)
 - [Program Flow Control | The EXIT That Means Two Different Things, the CHECK That Is a Double Negative & the END-OF-SELECTION That Never Runs](https://github.com/deepakjoshy/ABAP/tree/main/Program%20Flow%20Control#readme)
 - [Sending Email (BCS) | The COMMIT WORK That Is Your Job, the Subject Silently Cut at 50 & the SET_RECIPIENT That Does Not Exist](https://github.com/deepakjoshy/ABAP/tree/main/Email%20and%20BCS#readme)
+- [Spool & Print Parameters | The Cancel That Prints Anyway, Two Validity Flags That Disagree Only in Background & the Spool Number That Arrives on the First WRITE](https://github.com/deepakjoshy/ABAP/tree/main/Spool%20and%20Print%20Parameters#readme)
 - [ABAP COMMIT/ROLLBACK Event]( https://github.com/deepakjoshy/ABAP/tree/main/Commit%20Work%20Events#readme )
 - [ABAP Trial to BTP Trial Connection Setup via Cloud Connector](https://github.com/deepakjoshy/ABAP/blob/059b73151c83c7ef9edccbd99c4e01893d52b3b5/ABAPTrial/SAP%20ABAP%20Trial%20to%20BTP%20Trial%20Connection%20Setup%20via%20Cloud%20Connector.pdf)
 - [gCTS Quick Setup Guide](https://github.com/deepakjoshy/ABAP/blob/b6c38fc830866b31be4a593e76e92c55503ab14a/gCTS/gCTS%20Setup%20-%20Playbook.pdf)
