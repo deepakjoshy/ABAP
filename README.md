@@ -98,6 +98,7 @@
 - [Data Archiving (ADK) | The Write Program That Must Not Delete, the COMMIT That Is Not COMMIT WORK & the Two Exceptions Both Numbered 1](https://github.com/deepakjoshy/ABAP/tree/main/Data%20Archiving#readme)
 - [DDIC Structure Extensions | The Category That Punishes You For Being Generous, the Level Numbers That Are Off By One & the Field Order That Is Not the Database Order](https://github.com/deepakjoshy/ABAP/tree/main/DDIC%20Structure%20Extensions#readme)
 - [Type Conversions & Lossless Assignment | The Text That Becomes 42, the Date Difference That Is 0 & the EXACT That Checks Nothing](https://github.com/deepakjoshy/ABAP/tree/main/Type%20Conversions#readme)
+- [Quantities & Units of Measure | The UNIT Addition That Only Trims Zeros, the Two Decimal Columns That Are Anagrams & the Result Type That Changes Between ABAP SQL and CDS](https://github.com/deepakjoshy/ABAP/tree/main/Quantities%20and%20Units#readme)
 - [ABAP COMMIT/ROLLBACK Event]( https://github.com/deepakjoshy/ABAP/tree/main/Commit%20Work%20Events#readme )
 - [ABAP Trial to BTP Trial Connection Setup via Cloud Connector](https://github.com/deepakjoshy/ABAP/blob/059b73151c83c7ef9edccbd99c4e01893d52b3b5/ABAPTrial/SAP%20ABAP%20Trial%20to%20BTP%20Trial%20Connection%20Setup%20via%20Cloud%20Connector.pdf)
 - [gCTS Quick Setup Guide](https://github.com/deepakjoshy/ABAP/blob/b6c38fc830866b31be4a593e76e92c55503ab14a/gCTS/gCTS%20Setup%20-%20Playbook.pdf)
