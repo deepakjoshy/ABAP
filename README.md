@@ -101,6 +101,7 @@
 - [Quantities & Units of Measure | The UNIT Addition That Only Trims Zeros, the Two Decimal Columns That Are Anagrams & the Result Type That Changes Between ABAP SQL and CDS](https://github.com/deepakjoshy/ABAP/tree/main/Quantities%20and%20Units#readme)
 - [Pragmas & Pseudo Comments | The Suppression That Silently Does Nothing, the Pragma Before the Colon That Covers the Whole Chain & the Mix That Creates a Warning You Cannot Switch Off](https://github.com/deepakjoshy/ABAP/tree/main/Pragmas%20and%20Pseudo%20Comments#readme)
 - [Enumerated Types | The Assignment That Gives You a Name Instead of a Value, the CONV Whose Meaning Flips With Its Target & the Cross-Type Cast Nothing Rejects](https://github.com/deepakjoshy/ABAP/tree/main/Enumerated%20Types#readme)
+- [Function Modules & Function Groups | The Global Data That Outlives Your Call, the Return Code 0 That Means Both Success and Failure & the RAISE in a Subroutine That Hijacks Somebody Else's Function Module](https://github.com/deepakjoshy/ABAP/tree/main/Function%20Modules#readme)
 - [ABAP COMMIT/ROLLBACK Event]( https://github.com/deepakjoshy/ABAP/tree/main/Commit%20Work%20Events#readme )
 - [ABAP Trial to BTP Trial Connection Setup via Cloud Connector](https://github.com/deepakjoshy/ABAP/blob/059b73151c83c7ef9edccbd99c4e01893d52b3b5/ABAPTrial/SAP%20ABAP%20Trial%20to%20BTP%20Trial%20Connection%20Setup%20via%20Cloud%20Connector.pdf)
 - [gCTS Quick Setup Guide](https://github.com/deepakjoshy/ABAP/blob/b6c38fc830866b31be4a593e76e92c55503ab14a/gCTS/gCTS%20Setup%20-%20Playbook.pdf)
