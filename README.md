@@ -103,6 +103,7 @@
 - [Enumerated Types | The Assignment That Gives You a Name Instead of a Value, the CONV Whose Meaning Flips With Its Target & the Cross-Type Cast Nothing Rejects](https://github.com/deepakjoshy/ABAP/tree/main/Enumerated%20Types#readme)
 - [Function Modules & Function Groups | The Global Data That Outlives Your Call, the Return Code 0 That Means Both Success and Failure & the RAISE in a Subroutine That Hijacks Somebody Else's Function Module](https://github.com/deepakjoshy/ABAP/tree/main/Function%20Modules#readme)
 - [RAP Draft Handling | The Access Control That Does Not Reach Your Draft Data, the DELETE FROM That Leaves a Duplicate Key Behind & the ETag Field That Stops Being Suitable the Moment You Draft-Enable](https://github.com/deepakjoshy/ABAP/tree/main/RAP%20Draft%20Handling#readme)
+- [Background RFC (bgRFC) | The Unit That Is Exhausted by COMMIT WORK, the Update Record Whose Deletion Takes Your Units With It & the Web Service Call That Cannot Run Inside a Unit](https://github.com/deepakjoshy/ABAP/tree/main/bgRFC#readme)
 - [ABAP COMMIT/ROLLBACK Event]( https://github.com/deepakjoshy/ABAP/tree/main/Commit%20Work%20Events#readme )
 - [ABAP Trial to BTP Trial Connection Setup via Cloud Connector](https://github.com/deepakjoshy/ABAP/blob/059b73151c83c7ef9edccbd99c4e01893d52b3b5/ABAPTrial/SAP%20ABAP%20Trial%20to%20BTP%20Trial%20Connection%20Setup%20via%20Cloud%20Connector.pdf)
 - [gCTS Quick Setup Guide](https://github.com/deepakjoshy/ABAP/blob/b6c38fc830866b31be4a593e76e92c55503ab14a/gCTS/gCTS%20Setup%20-%20Playbook.pdf)
